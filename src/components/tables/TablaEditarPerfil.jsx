@@ -3,7 +3,7 @@ import { Card, Button, Form, Alert, Modal } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../Navbar';
 import '../css/TableEditarPerfil.css';
-import { saveProfile, getProfile } from '../../services/indexedDB'; // Importar funciones de IndexedDB
+import { saveProfile, getProfile, syncProfile  } from '../../services/indexedDB'; // Importar funciones de IndexedDB
 
 const useWindowWidth = () => {
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
@@ -32,8 +32,10 @@ export default function TableEditarPerfil() {
   const windowWidth = useWindowWidth();
   const isMobile = windowWidth < 768;
 
+  
   useEffect(() => {
     fetchProfile();
+    
   }, []);
 
   const fetchProfile = async () => {
@@ -90,9 +92,9 @@ export default function TableEditarPerfil() {
       console.error('El perfil no tiene un ID definido.');
       return;
     }
-
+  
     if (navigator.onLine) {
-      // Modo online: actualiza datos en el servidor
+      // Modo online: actualizar en el servidor
       try {
         const response = await fetch(apiUrl, {
           method: 'PUT',
@@ -102,6 +104,7 @@ export default function TableEditarPerfil() {
           },
           body: JSON.stringify(profile),
         });
+  
         if (response.ok) {
           setShowSuccessMessage(true);
           setTimeout(() => setShowSuccessMessage(false), 3000);
@@ -115,14 +118,16 @@ export default function TableEditarPerfil() {
         console.error('Error updating profile:', error);
       }
     } else {
-      // Modo offline: guarda cambios en IndexedDB
+      // Modo offline: guardar en IndexedDB y esperar sincronización
       await saveProfile(profile);
       setShowSuccessMessage(true);
       setTimeout(() => setShowSuccessMessage(false), 3000);
       setEditMode(false);
       setShowProfileModal(false);
+      console.warn('Guardado localmente. Se sincronizará cuando haya conexión.');
     }
   };
+  
 ///sss
   const handleChange = (e) => {
     const { name, value } = e.target;

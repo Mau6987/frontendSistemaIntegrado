@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "vite preview"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -15,9 +16,12 @@
     "@fortawesome/fontawesome-free": "^6.7.2",
     "@mui/material": "^6.4.0",
     "bootstrap": "^5.3.3",
+    "dexie": "^4.0.11",
     "idb": "^8.0.1",
+    "jspdf": "^2.5.2",
+    "jspdf-autotable": "^3.8.4",
     "react": "^18.3.1",
-    "react-bootstrap": "^2.10.7",
+    "react-bootstrap": "^2.10.9",
     "react-dom": "^18.3.1",
     "react-select": "^5.9.0",
     "sweetalert2": "^11.15.10",

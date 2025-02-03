@@ -36,11 +36,42 @@ const useWindowWidth = () => {
   return windowWidth;
 };
 
-export default function TableCargasAgua() {
+
+export default function TableCargasAgua2() {
+
+  const getDaysInMonth = (month, year) => {
+    if (month === 2) {
+        // Si el mes es febrero, verificamos si es un año bisiesto
+        return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0) ? 29 : 28;
+    }
+    // Meses con 30 días
+    if ([4, 6, 9, 11].includes(month)) return 30;
+    // Meses con 31 días
+    return 31;
+  };
   const windowWidth = useWindowWidth();
   const isMobile = windowWidth < 768;
   const [fechaHora, setFechaHora] = useState("");
   const [estado, setEstado] = useState("deuda");
+  const [showMonthFilter, setShowMonthFilter] = useState(false);
+const [showStatusFilter, setShowStatusFilter] = useState(false);
+const [availableMonths, setAvailableMonths] = useState([]);
+const today = new Date();
+const [selectedDay, setSelectedDay] = useState(today.getDate());
+const [selectedMonth, setSelectedMonth] = useState(today.getMonth() + 1);
+const [selectedYear, setSelectedYear] = useState(today.getFullYear());
+const [diaInicio, setDiaInicio] = useState(1);
+const [diaFin, setDiaFin] = useState(31);
+
+
+const getMonthName = (month) => { 
+    const monthNames = [
+      "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+      "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+    ];
+    return monthNames[month - 1]; // Los meses van de 0 a 11 en JS
+  };
+  
 
   const [tiposCamion, setTiposCamion] = useState([]);
   const [tipoCamionId, setTipoCamionId] = useState(0);
@@ -59,6 +90,35 @@ export default function TableCargasAgua() {
   const token = localStorage.getItem('token');
   const navigate = useNavigate();
   const URL = 'https://mi-backendsecond.onrender.com/cargagua';
+
+
+  const [selectedStatus, setSelectedStatus] = useState([]); // ✅ Permitir múltiples filtros de estado
+  const [dateRange, setDateRange] = useState({ fechaInicio: '', fechaFin: '' }); // ✅ Rango de fechas
+
+  const [itemsPerPage] = useState(6);
+const [showFilterMenu, setShowFilterMenu] = useState(false); // Para mostrar el filtro
+
+const [currentPage, setCurrentPage] = useState(1); // Página actual
+const [cargasPerPage] = useState(6); // Cantidad de cargas por página
+
+// 🔹 Índices para la paginación
+const indexOfLastCarga = currentPage * cargasPerPage; 
+const indexOfFirstCarga = indexOfLastCarga - cargasPerPage; 
+const currentCargas = data.slice(indexOfFirstCarga, indexOfLastCarga); // Filtrar cargas de la página actual
+const totalPages = Math.ceil(data.length / cargasPerPage); // Número total de páginas
+
+// 🔹 Funciones para cambiar de página
+const nextPage = () => {
+  if (currentPage < totalPages) {
+    setCurrentPage(currentPage + 1);
+  }
+};
+
+const prevPage = () => {
+  if (currentPage > 1) {
+    setCurrentPage(currentPage - 1);
+  }
+};
   useEffect(() => {
     const role = localStorage.getItem('rol');
     if (role !== 'admin') {
@@ -117,14 +177,59 @@ export default function TableCargasAgua() {
           console.error('Error al obtener usuarios:', error);
         }
       };
-  
+      const months = Array.from({ length: 12 }, (_, i) => i + 1); // Genera 1 a 12
+      setAvailableMonths(months);
       fetchData();
       fetchUsuarios();
       fetchTiposCamion();
+       // Ajustar días al cambiar mes/año
     }
-  }, []);
+   }, [diaInicio, diaFin, selectedMonth, selectedYear, selectedStatus]);
+   const handleMonthChange = (event) => {
+    setSelectedMonth(parseInt(event.target.value));
+  };
+  
+  // 📌 Función para cambiar el estado seleccionado
+  const handleStatusFilterChange = (event) => {
+    const value = event.target.value;
+    setSelectedStatus((prev) =>
+      prev.includes(value) ? prev.filter((s) => s !== value) : [...prev, value]
+    );
+  };
+  
   
 
+  const handleDateChange = (event) => {
+    setDateRange((prev) => ({
+      ...prev,
+      [event.target.name]: event.target.value,
+    }));
+  };
+ 
+
+
+  
+    const applyMonthFilter = () => {
+        fetchData(selectedMonth, selectedStatus);
+        setShowMonthFilter(false);
+    };
+    
+    const applyStatusFilter = () => {
+        fetchData(selectedMonth, selectedStatus);
+        setShowStatusFilter(false);
+    };
+  
+    const renderFilterButton = () => (
+        <div className="btn-filtro-container">
+          <Button 
+            onClick={() => setShowFilterMenu(!showFilterMenu)} 
+            className="btn-filtro"
+          >
+            🔍 Filtros
+          </Button>
+        </div>
+      );
+      
   const handleInputChange = (key, value) => {
     if (editMode) {
       setSelectedRegistro((prevRegistro) => ({
@@ -178,7 +283,9 @@ export default function TableCargasAgua() {
     setSelectedRegistro(null);
     setShowModal(true);
     setEditMode(false);
-  };const handleGuardarCreateRegistro = async (e) => {
+  };
+  
+  const handleGuardarCreateRegistro = async (e) => {
     e.preventDefault();
     const form = e.currentTarget;
   
@@ -259,6 +366,7 @@ export default function TableCargasAgua() {
       setValidated(true);
     }
   };
+  
   const handleEliminarRegistro = async (registroId) => {
     try {
       if (navigator.onLine) {
@@ -448,34 +556,97 @@ export default function TableCargasAgua() {
       );
     }
   };
+ 
   
-  
+
   const fetchData = async () => {
     try {
-      if (navigator.onLine) {
-        const response = await fetch(URL, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-  
-        if (response.ok) {
-          const jsonData = await response.json();
-          setData(jsonData);
-          // Guardar datos en IndexedDB para uso offline
-          await Promise.all(jsonData.map((registro) => saveCargaAgua(registro)));
-        } else if (response.status === 401) {
-          navigate('/');
+        if (navigator.onLine) {
+            const response = await fetch(URL, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
+            if (response.ok) {
+                let jsonData = await response.json();
+
+                // 🔹 Ordenar por fechaHora (Más recientes primero)
+                jsonData.sort((a, b) => new Date(b.fechaHora) - new Date(a.fechaHora));
+
+                // 🔹 Filtrar por estado si está seleccionado
+                if (selectedStatus.length > 0) {
+                    jsonData = jsonData.filter((registro) => selectedStatus.includes(registro.estado));
+                }
+
+                jsonData = jsonData.filter((registro) => {
+                  const registroFecha = new Date(registro.fechaHora);
+                  const diaRegistro = registroFecha.getDate();
+              
+                  return (
+                      diaRegistro >= diaInicio &&
+                      diaRegistro <= diaFin &&
+                      registroFecha.getMonth() + 1 === selectedMonth &&
+                      registroFecha.getFullYear() === selectedYear
+                  );
+              });
+              
+              
+
+                // ✅ Guardar en IndexedDB para uso offline
+                await Promise.all(jsonData.map((registro) => saveCargaAgua(registro)));
+
+                // ✅ Actualizar estado con los datos filtrados
+                setData(jsonData);
+                setCurrentPage(1);
+            } else if (response.status === 401) {
+                navigate('/');
+            }
         } else {
-          console.error('Error al obtener los datos del servidor.');
+            // 🔹 Obtener datos desde IndexedDB si está offline
+            let cachedData = await getCargasAgua();
+
+            // 🔹 Ordenar registros en modo offline
+            cachedData.sort((a, b) => new Date(b.fechaHora) - new Date(a.fechaHora));
+
+            // 🔹 Aplicar filtros en modo offline
+            if (selectedStatus.length > 0) {
+                cachedData = cachedData.filter((registro) => selectedStatus.includes(registro.estado));
+            }
+
+            // 🔹 Filtrar por día, mes y año seleccionados
+            cachedData = cachedData.filter((registro) => {
+                const registroFecha = new Date(registro.fechaHora);
+                return (
+                    registroFecha.getDate() === selectedDay &&
+                    registroFecha.getMonth() + 1 === selectedMonth &&
+                    registroFecha.getFullYear() === selectedYear
+                );
+            });
+
+            setData(cachedData);
+            setCurrentPage(1);
         }
-      } else {
-        // Obtener datos desde IndexedDB
-        const cachedData = await getCargasAgua();
-        setData(cachedData);
-      }
     } catch (error) {
-      console.error('Error al obtener datos:', error);
+        console.error('Error al obtener datos:', error);
     }
+};
+
+
+
+// 📌 Función para cambiar el mes seleccionado
+
+  // 📌 Función para aplicar filtros
+  const applyFilters = () => {
+    fetchData();
+    setShowFilterMenu(false);
   };
+  // Función para cambiar de página
+const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+// Obtener los registros actuales para la página
+const indexOfLastItem = currentPage * itemsPerPage;
+const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+const currentItems = data.slice(indexOfFirstItem, indexOfLastItem);
+
   const renderHeaders = () => (
     <thead>
       <tr>
@@ -488,33 +659,58 @@ export default function TableCargasAgua() {
       </tr>
     </thead>
   );
-  const renderRows = () => (
-    <tbody>
-      {data.map((item, index) => (
-        <tr key={index}>
-          <td>{new Date(item.fechaHora).toLocaleString('es-ES')}</td>
-          <td>{item.estado}</td>
-          <td>{item.usuario.username}</td>
-          <td>
-            <Button className="btn btn-success" onClick={() => handleVerRegistro(item)}>
-              Ver
-            </Button>
-          </td>
-          <td>
-            <Button className="btn btn-warning" onClick={() => handleEditRegistro(item)}>
-              Editar
-            </Button>
-          </td>
-          <td>
-            <Button className="btn btn-danger" onClick={() => handleShow(item)}>
-              Eliminar
-            </Button>
-          </td>
-        </tr>
-      ))}
-    </tbody>
+  const renderRows = () => {
+    const paginatedData = currentItems; // Se usa la paginación correctamente
+  
+    return (
+      <tbody>
+        {paginatedData.map((item, index) => (
+          <tr key={index}>
+            <td>{new Date(item.fechaHora).toLocaleString('es-ES')}</td>
+            <td>{item.estado}</td>
+            <td>{item.usuario?.username || 'Sin usuario'}</td>
+            <td>
+              <Button className="btn btn-success" onClick={() => handleVerRegistro(item)}>
+                Ver
+              </Button>
+            </td>
+            <td>
+              <Button className="btn btn-warning" onClick={() => handleEditRegistro(item)}>
+                Editar
+              </Button>
+            </td>
+            <td>
+              <Button className="btn btn-danger" onClick={() => handleShow(item)}>
+                Eliminar
+              </Button>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    );
+  };
+  
+  const renderPagination = () => (
+    <div className="pagination-div">
+      <Button
+        variant="secondary"
+        onClick={prevPage}
+        disabled={currentPage === 1}
+      >
+        Anterior
+      </Button>
+  
+      <span className="mx-2">Página {currentPage} de {totalPages}</span>
+  
+      <Button
+        variant="secondary"
+        onClick={nextPage}
+        disabled={currentPage === totalPages}
+      >
+        Siguiente
+      </Button>
+    </div>
   );
-
   const renderTable = () => (
     <Table responsive striped bordered hover variant="dark">
       {renderHeaders()}
@@ -549,38 +745,134 @@ export default function TableCargasAgua() {
       ))}
     </div>
   );
-
   return (
     <>
       <Navbar />
+
       <div className="main-container">
+       
+        {/* 🔹 Card de Filtros (Centrado en Pantalla) */}
+        {showFilterMenu && (
+          <div className="filter-card">
+            <Card className="p-3 shadow-lg rounded bg-light">
+              <Card.Body>
+                <Card.Title className="text-center"><strong>Filtrar Registros</strong></Card.Title>
+                
+            {/* 🔹 Filtro por Año */}
+              <FormGroup className="mt-3">
+                <FormLabel>Filtrar por Año:</FormLabel>
+                <FormControl 
+                  type="number" 
+                  min="2000" 
+                  max="2100" 
+                  value={selectedYear} 
+                  onChange={(e) => {
+                    const newYear = parseInt(e.target.value);
+                    setSelectedYear(newYear);
+                    
+                  }}
+                />
+              </FormGroup>
+
+              {/* 🔹 Filtro por Mes */}
+              <FormGroup className="mt-3">
+                <FormLabel>Filtrar por Mes:</FormLabel>
+                <FormControl as="select" value={selectedMonth} onChange={(e) => {
+                    const newMonth = parseInt(e.target.value);
+                    setSelectedMonth(newMonth);
+                    // Ajustar los días según el nuevo mes
+                  }}
+                >
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+                    <option key={month} value={month}>{getMonthName(month)}</option>
+                  ))}
+                </FormControl>
+              </FormGroup>
+
+              {/* 🔹 Filtro por Rango de Días */}
+              <FormGroup className="mt-3">
+                <FormLabel>Desde el día:</FormLabel>
+                <FormControl 
+                  as="select" 
+                  value={diaInicio} 
+                  onChange={(e) => setDiaInicio(parseInt(e.target.value))}
+                >
+                  {Array.from({ length: getDaysInMonth(selectedMonth, selectedYear) }, (_, i) => (
+                    <option key={i + 1} value={i + 1}>{i + 1}</option>
+                  ))}
+                </FormControl>
+              </FormGroup>
+
+              <FormGroup className="mt-3">
+                <FormLabel>Hasta el día:</FormLabel>
+                <FormControl 
+                  as="select" 
+                  value={diaFin} 
+                  onChange={(e) => setDiaFin(parseInt(e.target.value))}
+                >
+                  {Array.from({ length: getDaysInMonth(selectedMonth, selectedYear) }, (_, i) => (
+                    <option key={i + 1} value={i + 1}>{i + 1}</option>
+                  ))}
+                </FormControl>
+              </FormGroup>
+
+
+
+                {/* 🔹 Filtro por Estado */}
+                <FormGroup className="mt-3">
+                  <FormLabel>Filtrar por Estado:</FormLabel>
+                  <Form.Check type="checkbox" label="Deuda" value="deuda" onChange={handleStatusFilterChange} checked={selectedStatus.includes("deuda")} />
+                  <Form.Check type="checkbox" label="Pagado" value="pagado" onChange={handleStatusFilterChange} checked={selectedStatus.includes("pagado")} />
+                </FormGroup>
+
+                {/* 🔹 Botones para aplicar o cancelar filtros */}
+                <div className="filter-buttons">
+                  <Button variant="success" onClick={applyFilters} className="me-2">Aplicar Filtros</Button>
+                  <Button variant="danger" onClick={() => setShowFilterMenu(false)}>Cancelar</Button>
+                </div>
+              </Card.Body>
+            </Card>
+          </div>
+        )}
+
+        {/* 🔹 Tabla de Registros */}
         <div className="tabla-div">
           {isMobile ? renderCards() : renderTable()}
         </div>
-        <div className="btn-crear-div">
+
+        {/* 🔹 Paginación */}
+        <div className="pagination-div">
+          {renderPagination()}
+        </div>
+        
+        {/* 🔹 Contenedor de botones (Filtros + Crear Registro) */}
+        <div className="btn-container">
+          <Button variant="primary" onClick={() => setShowFilterMenu(!showFilterMenu)} className="btn-filtro">
+            <i className="fa-solid fa-filter"></i> Filtros
+          </Button>
           <Button className="btn btn-success" onClick={handleCreateRegistro}>
             Crear Registro
           </Button>
         </div>
+
+        {/* 🔹 Modales */}
+        <Modal show={showModal} onHide={handleCloseModal}>
+          {renderModalData()}
+        </Modal>
+
+        <Modal show={show} onHide={handleClose}>
+          <Modal.Header closeButton>
+            <Modal.Title>Confirmación</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>¿Está seguro de que desea eliminar este registro?</Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={handleClose}>Cerrar</Button>
+            <Button variant="danger" onClick={() => handleEliminarRegistro(selectedRegistro.id)}>Eliminar</Button>
+          </Modal.Footer>
+        </Modal>
       </div>
-      <Modal show={showModal} onHide={handleCloseModal}>
-        
-        {renderModalData()}
-      </Modal>
-      <Modal show={show} onHide={handleClose}>
-        <Modal.Header closeButton>
-          <Modal.Title>Confirmación</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>¿Está seguro de que desea eliminar este registro?</Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleClose}>
-            Cerrar
-          </Button>
-          <Button variant="danger" onClick={() => handleEliminarRegistro(selectedRegistro.id)}>
-            Eliminar
-          </Button>
-        </Modal.Footer>
-      </Modal>
     </>
-  );
+);
+
+  
 }

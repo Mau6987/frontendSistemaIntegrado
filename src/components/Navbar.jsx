@@ -70,18 +70,28 @@ export default function Navbar() {
                 <i className="fa-solid fa-pencil"></i>Menu
               </Dropdown.Toggle>
               <Dropdown.Menu variant='dark' className='tables-dropdown-menu'>
-                <Dropdown.Item onClick={() => handleTableSelect('usuarios')}>
-                  Gestión de Usuarios
+               
+                <Dropdown.Item onClick={() => handleTableSelect('usuarios2')}>
+                  Gestión de Usuarios2
                 </Dropdown.Item>
                 <Dropdown.Item onClick={() => handleTableSelect('tiposDeCamion')}>
                   Gestión Tipo de Camión
                 </Dropdown.Item>
-                <Dropdown.Item onClick={() => handleTableSelect('cargagua')}>
-                  Gestión de Carga de Agua
+                
+                <Dropdown.Item onClick={() => handleTableSelect('cargagua2')}>
+                  Gestión de Carga de Agua2
                 </Dropdown.Item>
-                <Dropdown.Item onClick={() => handleTableSelect('pagos')}>
-                  Gestión de Pagos
+                
+                <Dropdown.Item onClick={() => handleTableSelect('pagos2')}>
+                  Gestión de Pagos2
                 </Dropdown.Item>
+                <Dropdown.Item onClick={() => handleTableSelect('consultas')}>
+                TableConsultas
+                </Dropdown.Item>
+                <Dropdown.Item onClick={() => handleTableSelect('consultaUsuario')}>
+                 Buscar Usuario
+                </Dropdown.Item>
+                
               </Dropdown.Menu>
             </Dropdown>
           </li>
@@ -111,6 +121,7 @@ export default function Navbar() {
                 <Dropdown.Item onClick={() => handleTableSelect('pagosconductores')}>
                   Pagos realizados tus conductores
                 </Dropdown.Item>
+                
               </Dropdown.Menu>
             </Dropdown>
           </li>

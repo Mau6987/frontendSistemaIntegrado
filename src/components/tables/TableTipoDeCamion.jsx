@@ -15,7 +15,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../Navbar';
 import '../css/TableTipoCamion.css';
-import { getTiposDeCamion, saveTipoCamion } from '../../services/indexedDB';
+import { getTiposDeCamion, saveTipoCamion, syncEliminarTiposDeCamion, syncTiposDeCamion} from '../../services/indexedDB';
 
 // Hook para manejar el tamaño de la ventana
 const useWindowWidth = () => {
@@ -78,46 +78,88 @@ export default function TableTipoCamion() {
       console.error('Error al obtener datos:', error);
     }
   };
-
   const handleGuardarRegistro = async () => {
-    const nuevoRegistro = { descripcion, cantidadDeAgua };
+    const nuevoRegistro = {
+      id: selectedRegistro?.id || (navigator.onLine ? undefined : `offline-${Date.now()}`),
+      descripcion,
+      cantidadDeAgua,
+      pendingSync: !navigator.onLine // Marcar como pendiente si está offline
+    };
+  
     try {
-      const response = await fetch(URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(nuevoRegistro),
-      });
-      if (response.ok) {
-        fetchData();
-        setShowModal(false);
+      if (navigator.onLine) {
+        const response = await fetch(
+          selectedRegistro ? `${URL}/${selectedRegistro.id}` : URL,
+          {
+            method: selectedRegistro ? 'PUT' : 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(nuevoRegistro),
+          }
+        );
+  
+        if (response.ok) {
+          fetchData();
+          setShowModal(false);
+          Swal.fire({
+            icon: 'success',
+            title: selectedRegistro ? 'Registro actualizado' : 'Registro creado',
+            text: 'Los cambios se han guardado exitosamente.',
+          });
+        } else {
+          console.error('Error al guardar el registro.');
+        }
       } else {
-        console.error('Error al guardar el registro.');
+        await saveTipoCamion(nuevoRegistro);
+        setShowModal(false);
+        Swal.fire({
+          icon: 'info',
+          title: 'Modo offline',
+          text: 'Los cambios se guardaron localmente y se sincronizarán cuando haya conexión.',
+        });
       }
     } catch (error) {
-      console.error('Error al realizar la solicitud POST:', error);
+      console.error('Error al realizar la solicitud:', error);
     }
   };
+  
 
   const handleEliminarRegistro = async () => {
     try {
-      const response = await fetch(`${URL}/${selectedRegistro.id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (response.ok) {
-        fetchData();
-        setShowDeleteModal(false);
+      if (navigator.onLine) {
+        const response = await fetch(`${URL}/${selectedRegistro.id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+  
+        if (response.ok) {
+          fetchData();
+          setShowDeleteModal(false);
+          Swal.fire({
+            icon: 'success',
+            title: 'Registro eliminado',
+            text: 'El registro se ha eliminado exitosamente.',
+          });
+        } else {
+          console.error('Error al eliminar el registro.');
+        }
       } else {
-        console.error('Error al eliminar el registro.');
+        // Marcar para eliminación en IndexedDB
+        await saveTipoCamion({ ...selectedRegistro, deletePending: true });
+        setShowDeleteModal(false);
+        Swal.fire({
+          icon: 'info',
+          title: 'Modo offline',
+          text: 'El registro se eliminará cuando haya conexión.',
+        });
       }
     } catch (error) {
-      console.error('Error al realizar la solicitud DELETE:', error);
+      console.error('Error al eliminar el registro:', error);
     }
   };
-
+  
   const renderHeaders = () => (
     <thead>
       <tr>
@@ -237,31 +279,32 @@ export default function TableTipoCamion() {
           <ModalTitle>{editMode ? 'Editar Registro' : 'Detalles del Registro'}</ModalTitle>
         </ModalHeader>
         <ModalBody>
-          <Form>
-            <FormGroup>
-              <FormLabel>Descripción</FormLabel>
-              <FormControl
-                type="text"
-                value={descripcion}
-                onChange={(e) => setDescripcion(e.target.value)}
-                readOnly={!editMode}
-              />
-            </FormGroup>
-            <FormGroup>
-              <FormLabel>Cantidad de Agua</FormLabel>
-              <FormControl
-                as="select"
-                value={cantidadDeAgua}
-                onChange={(e) => setCantidadDeAgua(e.target.value)}
-                disabled={!editMode}
-              >
-                <option value="12000">12000</option>
-                <option value="15000">15000</option>
-                <option value="18000">18000</option>
-              </FormControl>
-            </FormGroup>
-          </Form>
-        </ModalBody>
+  <Form>
+    <FormGroup>
+      <FormLabel>Descripción</FormLabel>
+      <FormControl
+        type="text"
+        value={descripcion}
+        onChange={(e) => setDescripcion(e.target.value)}
+        readOnly={!editMode} // Permitir edición en offline
+      />
+    </FormGroup>
+    <FormGroup>
+      <FormLabel>Cantidad de Agua</FormLabel>
+      <FormControl
+        as="select"
+        value={cantidadDeAgua}
+        onChange={(e) => setCantidadDeAgua(e.target.value)}
+        disabled={!editMode} // Permitir cambios en offline
+      >
+        <option value="12000">12000</option>
+        <option value="15000">15000</option>
+        <option value="18000">18000</option>
+      </FormControl>
+    </FormGroup>
+  </Form>
+</ModalBody>
+
         <Modal.Footer>
           {editMode && <Button variant="success" onClick={handleGuardarRegistro}>Guardar</Button>}
           <Button variant="secondary" onClick={handleCloseModal}>Cerrar</Button>

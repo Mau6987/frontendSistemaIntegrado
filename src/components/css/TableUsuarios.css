@@ -134,3 +134,70 @@
   position: absolute;
   display: inline-block;
 }
+
+
+
+.pagination-info {
+  margin: 0 10px;
+  font-size: 16px;
+  font-weight: bold;
+}
+.pagination-div {
+  display: flex;
+  justify-content: center;  /* Centrar los botones */
+  margin: 20px 0;  /* Espacio arriba y abajo */
+}
+
+.btn-crear-div {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px; /* Espacio entre la paginación y el botón */
+}
+.table-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Centrar contenido */
+  width: 100%;
+}
+
+.pagination-container {
+  margin-top: 10px; /* Espacio entre la tabla y la paginación */
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+
+.sort-button {
+  border: none;
+  background: none;
+  color: white;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 5px;
+}
+.sort-button:hover {
+  color: #ddd;
+}
+.filter-card {
+  position: absolute;
+  bottom: 80px; /* Se ubica justo sobre el botón "Crear Registro" */
+  right: 20px; /* Se alinea a la derecha */
+  width: 280px; /* Tamaño compacto */
+  z-index: 1000;
+  background-color: #f8f9fa !important; /* Fondo gris claro */
+  border-radius: 10px;
+  padding: 15px;
+}
+
+.btn-filtro {
+  margin-right: 15px;
+}
+
+.btn-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  position: relative;
+}

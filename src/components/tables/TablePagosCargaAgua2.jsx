@@ -14,6 +14,7 @@ import {
   saveUsuario,
   getUsuarios,
 } from '../../services/indexedDB';
+import { Pagination } from 'react-bootstrap';
 
 const useWindowWidth = () => {
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
@@ -49,63 +50,17 @@ export default function PagoCargaAgua() {
   const token = localStorage.getItem('token');
   const navigate = useNavigate();
   const URL_BASE = 'https://mi-backendsecond.onrender.com';
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6; // Máximo de registros por página
+  
+
 
   useEffect(() => {
     const role = localStorage.getItem('rol');
     if (role !== 'admin') {
       navigate('/');
     } else {
-      const fetchUsuarios = async () => {
-        try {
-          if (navigator.onLine) {
-            const response = await axios.get(`${URL_BASE}/usuariosrol`, {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            });
-            if (response.status === 200) {
-              const usuariosData = response.data;
-              setUsuarios(usuariosData);
-              // Guardar datos en IndexedDB
-              await Promise.all(usuariosData.map((usuario) => saveUsuario(usuario)));
-            } else {
-              console.error('Error al obtener los usuarios del servidor.');
-            }
-          } else {
-            // Obtener datos desde IndexedDB
-            const cachedUsuarios = await getUsuarios();
-            setUsuarios(cachedUsuarios);
-          }
-        } catch (error) {
-          console.error('Error al obtener los usuarios:', error);
-        }
-      };
-  
-      const fetchPagos = async () => {
-        try {
-          if (navigator.onLine) {
-            const response = await axios.get(`${URL_BASE}/pagoscargagua`, {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            });
-            if (response.status === 200) {
-              const pagosData = response.data;
-              setPagos(pagosData);
-              // Guardar datos en IndexedDB
-              await Promise.all(pagosData.map((pago) => savePagos(pago)));
-            } else {
-              console.error('Error al obtener los pagos del servidor.');
-            }
-          } else {
-            // Obtener datos desde IndexedDB
-            const cachedPagos = await getPagos();
-            setPagos(cachedPagos);
-          }
-        } catch (error) {
-          console.error('Error al obtener los pagos:', error);
-        }
-      };
+      
   
       fetchUsuarios();
       fetchPagos();
@@ -113,6 +68,47 @@ export default function PagoCargaAgua() {
       setSelectedCargas([]);
     }
   }, [token]);
+  const fetchUsuarios = async () => {
+    try {
+      if (navigator.onLine) {
+        const response = await axios.get(`${URL_BASE}/usuariosrol`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (response.status === 200) {
+          const usuariosData = response.data;
+          setUsuarios(usuariosData);
+          await Promise.all(usuariosData.map((usuario) => saveUsuario(usuario)));
+        }
+      } else {
+        const cachedUsuarios = await getUsuarios();
+        setUsuarios(cachedUsuarios);
+      }
+    } catch (error) {
+      console.error('Error al obtener los usuarios:', error);
+    }
+  };
+  
+      
+ const fetchPagos = async () => {
+  try {
+    if (navigator.onLine) {
+      const response = await axios.get(`${URL_BASE}/pagoscargagua`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.status === 200) {
+        const pagosData = response.data;
+        setPagos(pagosData);
+        await Promise.all(pagosData.map((pago) => savePagos(pago))); // Guardar en IndexedDB
+      }
+    } else {
+      const cachedPagos = await getPagos(); // Obtener desde IndexedDB
+      setPagos(cachedPagos);
+      console.info('Modo offline: Datos obtenidos desde IndexedDB');
+    }
+  } catch (error) {
+    console.error('Error al obtener los pagos:', error);
+  }
+};
 
   const fetchCargasDeuda = async (usuarioId) => {
     try {
@@ -142,7 +138,52 @@ export default function PagoCargaAgua() {
       console.error('Error al obtener las cargas de agua con deuda:', error);
     }
   };
+  // Agregar ESTADOS para los filtros
+const [filtroEstado, setFiltroEstado] = useState('');
+const today = new Date(); // Fecha actual
+
+const [showFilterModal, setShowFilterModal] = useState(false);
+const [filtroMes, setFiltroMes] = useState(today.getMonth() + 1); // Mes actual (1-12)
+const [filtroDia, setFiltroDia] = useState(today.getDate()); // Día actual (1-31)
+// 1️⃣ Mover la función `filtrarPagos` arriba de donde se usa
+const filtrarPagos = () => {
+    return pagos.filter((pago) => {
+      const fechaPago = new Date(pago.fechaHora);
   
+      // Filtrar por año
+      if (filtroAnio && fechaPago.getFullYear() !== parseInt(filtroAnio)) {
+        return false;
+      }
+  
+      // Filtrar por mes
+      if (filtroMes && fechaPago.getMonth() + 1 !== parseInt(filtroMes)) {
+        return false;
+      }
+  
+      // Filtrar por día
+      if (filtroDia && fechaPago.getDate() !== parseInt(filtroDia)) {
+        return false;
+      }
+  
+      return true;
+    });
+  };
+  
+
+
+
+
+  
+  // 🔹 Ahora puedes aplicar los filtros en la paginación
+
+    const handlePreviousPage = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
+    };
+
+    const handleNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+    };
+
 
   const handleUsuarioChange = (event) => {
     const selectedUsuarioId = event.target.value;
@@ -443,6 +484,15 @@ export default function PagoCargaAgua() {
     }
   };
 
+  
+
+const [filtroAnio, setFiltroAnio] = useState(today.getFullYear()); // Año actual
+
+  const pagosFiltrados = filtrarPagos();
+  const totalPages = Math.ceil(pagosFiltrados.length / itemsPerPage);
+const indexOfLastItem = currentPage * itemsPerPage;
+const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+const currentPagos = pagosFiltrados.slice(indexOfFirstItem, indexOfLastItem);
   const renderHeaders = () => (
     <thead>
       <tr>
@@ -457,26 +507,20 @@ export default function PagoCargaAgua() {
 
   const renderRows = () => (
     <tbody>
-      {pagos.map((pago) => (
-        <tr key={pago.id}>
-          <td>{pago.id}</td>
-          <td>{usuarios.find(usuario => usuario.id === pago.usuarioId)?.username || 'N/A'}</td>
-          <td>{pago.monto}</td>
-          <td>{new Date(pago.fechaHora).toLocaleString()}</td>
-          <td>
-            <Button variant="info" onClick={() => handleVerPago(pago)}>
-              Ver
-            </Button>{' '}
-            <Button variant="warning" onClick={() => handleEditPago(pago)}>
-              Editar
-            </Button>{' '}
-            <Button variant="danger" onClick={() => handleDeletePago(pago.id)}>
-              Eliminar
-            </Button>
-          </td>
-        </tr>
-      ))}
-    </tbody>
+  {currentPagos.map((pago) => (
+    <tr key={pago.id}>
+      <td>{pago.id}</td>
+      <td>{usuarios.find(usuario => usuario.id === pago.usuarioId)?.username || 'N/A'}</td>
+      <td>{pago.monto}</td>
+      <td>{new Date(pago.fechaHora).toLocaleString()}</td>
+      <td>
+        <Button variant="info">Ver</Button>{' '}
+        <Button variant="warning">Editar</Button>{' '}
+        <Button variant="danger">Eliminar</Button>
+      </td>
+    </tr>
+  ))}
+</tbody>
   );
 
   const renderTable = () => (
@@ -523,18 +567,41 @@ export default function PagoCargaAgua() {
       <Navbar />
       <Container className="main-container">
         <h2 className="mt-4">Pagos de Carga de Agua</h2>
+  
+        {/* BOTÓN DE FILTROS Y REGISTRO */}
+        <div className="d-flex justify-content-between mb-3">
+          <Button variant="success" onClick={() => {
+            setShowModal(true);
+            setEditMode(false);
+            setSelectedPago(null);
+            setFechaHora('');
+            setUsuarioId(0);
+            setMonto('');
+            setSelectedCargas([]);
+          }}>
+            Registrar Pago
+          </Button>
+  
+          <Button variant="info" onClick={() => setShowFilterModal(true)}>
+            Filtrar Pagos
+          </Button>
+        </div>
+  
+        {/* TABLA O TARJETAS (VERSIÓN MÓVIL) */}
         {isMobile ? renderCards() : renderTable()}
-        <Button variant="success" onClick={() => {
-          setShowModal(true);
-          setEditMode(false);
-          setSelectedPago(null);
-          setFechaHora('');
-          setUsuarioId(0);
-          setMonto('');
-          setSelectedCargas([]);
-        }}>
-          Registrar Pago
-        </Button>
+  
+        {/* PAGINACIÓN */}
+        {totalPages > 1 && (
+          <Pagination className="justify-content-center">
+            <Pagination.Prev onClick={handlePreviousPage} disabled={currentPage === 1} />
+            <span className="mx-3 align-self-center">
+              Página {currentPage} de {totalPages}
+            </span>
+            <Pagination.Next onClick={handleNextPage} disabled={currentPage === totalPages} />
+          </Pagination>
+        )}
+  
+        {/* MODAL PARA REGISTRO Y EDICIÓN */}
         <Modal show={showModal} onHide={() => setShowModal(false)}>
           <ModalHeader closeButton>
             <ModalTitle>
@@ -543,7 +610,69 @@ export default function PagoCargaAgua() {
           </ModalHeader>
           {renderModalContent()}
         </Modal>
+  
+        {/* MODAL PARA FILTROS */}
+            <Modal show={showFilterModal} onHide={() => setShowFilterModal(false)}>
+            <ModalHeader closeButton>
+                <ModalTitle>Filtrar Pagos</ModalTitle>
+            </ModalHeader>
+            <ModalBody>
+                <Form>
+                {/* Filtrar por Año */}
+                <FormGroup className="mb-2">
+                    <FormLabel>Filtrar por Año:</FormLabel>
+                    <FormControl
+                    type="number"
+                    min="2000"
+                    max="2100"
+                    value={filtroAnio}
+                    onChange={(e) => setFiltroAnio(e.target.value)}
+                    />
+                </FormGroup>
+
+                {/* Filtrar por Mes */}
+                <FormGroup className="mb-2">
+                    <FormLabel>Filtrar por Mes:</FormLabel>
+                    <FormControl as="select" value={filtroMes} onChange={(e) => setFiltroMes(e.target.value)}>
+                    {Array.from({ length: 12 }, (_, i) => (
+                        <option key={i + 1} value={i + 1}>
+                        {new Date(2025, i, 1).toLocaleString('es-ES', { month: 'long' })}
+                        </option>
+                    ))}
+                    </FormControl>
+                </FormGroup>
+
+                {/* Filtrar por Día */}
+                <FormGroup className="mb-2">
+                    <FormLabel>Filtrar por Día:</FormLabel>
+                    <FormControl
+                    type="number"
+                    min="1"
+                    max="31"
+                    value={filtroDia}
+                    onChange={(e) => setFiltroDia(e.target.value)}
+                    />
+                </FormGroup>
+                </Form>
+            </ModalBody>
+            <Modal.Footer>
+                <Button variant="primary" onClick={() => { setCurrentPage(1); setShowFilterModal(false); }}>
+                Aplicar Filtros
+                </Button>
+                <Button variant="secondary" onClick={() => { 
+                setFiltroMes(today.getMonth() + 1); 
+                setFiltroDia(today.getDate()); 
+                setFiltroAnio(today.getFullYear()); 
+                setCurrentPage(1); 
+                setShowFilterModal(false); 
+                }}>
+                Restablecer Fecha Actual
+                </Button>
+            </Modal.Footer>
+            </Modal>
+
       </Container>
     </>
   );
+  
 }

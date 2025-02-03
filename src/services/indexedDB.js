@@ -1,7 +1,7 @@
 import { openDB } from 'idb';
 
 // Inicializar la base de datos
-const dbPromise = openDB('app-db', 23, { // Cambia la versión al número más reciente
+const dbPromise = openDB('app-db', 33, { // Cambia la versión al número más reciente
   upgrade(db, oldVersion) {
     console.log('Actualizando la base de datos...');
     if (!db.objectStoreNames.contains('cargasAguaPropietario')) {
@@ -251,3 +251,281 @@ export const savePagoPropietario = async (registro) => {
     console.error('Error al guardar el registro en IndexedDB:', error);
   }
 };
+export const syncProfile = async () => {
+  if (!navigator.onLine) return; // Solo sincroniza si hay conexión
+
+  try {
+    const db = await dbPromise;
+    const tx = db.transaction('perfil', 'readonly');
+    const storedProfile = await tx.store.getAll(); // Obtener el perfil almacenado localmente
+
+    if (storedProfile.length > 0) {
+      const profile = storedProfile[0]; // Solo hay un perfil guardado
+
+      // Enviar al servidor
+      const response = await fetch(`https://mi-backendsecond.onrender.com/perfil/${profile.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify(profile),
+      });
+
+      if (response.ok) {
+        console.log('Perfil sincronizado con éxito.');
+
+        // Limpiar IndexedDB después de la sincronización
+        const deleteTx = db.transaction('perfil', 'readwrite');
+        await deleteTx.store.clear();
+      } else {
+        console.error('Error al sincronizar con el servidor:', response.status);
+      }
+    }
+  } catch (error) {
+    console.error('Error en la sincronización:', error);
+  }
+};
+
+
+//
+export const syncCargasAgua = async () => {
+  if (!navigator.onLine) return;
+
+  try {
+    const db = await dbPromise;
+    const tx = db.transaction('cargasAgua', 'readonly');
+    const storedCargas = await tx.store.getAll();
+
+    if (storedCargas.length > 0) {
+      for (const carga of storedCargas) {
+        let response;
+
+        if (carga.deletePending) {
+          // Si el registro está marcado para eliminar, eliminarlo en el servidor
+          response = await fetch(`https://mi-backendsecond.onrender.com/cargagua/${carga.id}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+          });
+        } else if (carga.updatePending) {
+          // Si el registro está marcado para actualización, actualizar en el servidor
+          response = await fetch(`https://mi-backendsecond.onrender.com/cargagua/${carga.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
+            },
+            body: JSON.stringify(carga),
+          });
+        } else if (carga.id.startsWith('offline-')) {
+          // Si es un nuevo registro creado en offline, crear en el servidor
+          response = await fetch('https://mi-backendsecond.onrender.com/cargagua', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
+            },
+            body: JSON.stringify(carga),
+          });
+        }
+
+        if (response && response.ok) {
+          console.log('Carga de agua sincronizada con éxito:', carga);
+
+          // Eliminar de IndexedDB después de sincronizar
+          const deleteTx = db.transaction('cargasAgua', 'readwrite');
+          await deleteTx.store.delete(carga.id);
+        } else {
+          console.error('Error al sincronizar carga de agua:', response ? response.status : 'No hay respuesta');
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error en la sincronización de cargas de agua:', error);
+  }
+};
+
+export const syncTiposDeCamion = async () => {
+  if (!navigator.onLine) return;
+
+  try {
+    const db = await dbPromise;
+    const tx = db.transaction('tiposDeCamion', 'readonly');
+    const storedTipos = await tx.store.getAll();
+
+    if (storedTipos.length > 0) {
+      for (const tipo of storedTipos) {
+        let response;
+
+        if (tipo.deletePending) {
+          // Si está marcado para eliminar, eliminarlo del servidor
+          response = await fetch(`https://mi-backendsecond.onrender.com/tiposDeCamion/${tipo.id}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+          });
+        } else if (tipo.updatePending) {
+          // Si está marcado para actualización, actualizarlo en el servidor
+          response = await fetch(`https://mi-backendsecond.onrender.com/tiposDeCamion/${tipo.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
+            },
+            body: JSON.stringify(tipo),
+          });
+        } else if (tipo.id.startsWith('offline-')) {
+          // Si es un nuevo registro creado en offline, crearlo en el servidor
+          response = await fetch('https://mi-backendsecond.onrender.com/tiposDeCamion', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
+            },
+            body: JSON.stringify(tipo),
+          });
+        }
+
+        if (response && response.ok) {
+          console.log('Tipo de camión sincronizado con éxito:', tipo);
+
+          // Eliminar de IndexedDB después de sincronizar
+          const deleteTx = db.transaction('tiposDeCamion', 'readwrite');
+          await deleteTx.store.delete(tipo.id);
+        } else {
+          console.error('Error al sincronizar tipo de camión:', response ? response.status : 'No hay respuesta');
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error en la sincronización de tipos de camión:', error);
+  }
+};
+
+
+
+export const syncEliminarTiposDeCamion = async () => {
+  if (!navigator.onLine) return;
+
+  try {
+    const db = await dbPromise;
+    const tx = db.transaction('tiposDeCamion', 'readonly');
+    const storedTipos = await tx.store.getAll();
+
+    if (storedTipos.length > 0) {
+      for (const tipo of storedTipos) {
+        if (tipo.deletePending) {
+          const response = await fetch(`https://mi-backendsecond.onrender.com/tiposDeCamion/${tipo.id}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+          });
+
+          if (response.ok) {
+            console.log('Tipo de camión eliminado con éxito:', tipo);
+
+            // Eliminar de IndexedDB después de sincronizar
+            const deleteTx = db.transaction('tiposDeCamion', 'readwrite');
+            await deleteTx.store.delete(tipo.id);
+          } else {
+            console.error('Error al sincronizar eliminación:', response.status);
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error en la sincronización de eliminaciones:', error);
+  }
+};
+
+export const syncUsuarios = async () => {
+  if (!navigator.onLine) return;
+
+  try {
+    const db = await dbPromise;
+    const tx = db.transaction('usuarios', 'readonly');
+    const storedUsuarios = await tx.store.getAll();
+
+    for (const usuario of storedUsuarios) {
+      if (usuario.pendingSync) {
+        // Si fue creado en offline, enviarlo al servidor
+        const response = await fetch('https://mi-backendsecond.onrender.com/usuarios', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+          body: JSON.stringify(usuario),
+        });
+
+        if (response.ok) {
+          console.log('Usuario sincronizado:', usuario);
+
+          // Eliminar de IndexedDB después de sincronizar
+          const deleteTx = db.transaction('usuarios', 'readwrite');
+          await deleteTx.store.delete(usuario.id);
+        } else {
+          console.error('Error al sincronizar usuario:', response.status);
+        }
+      }
+
+      if (usuario.deletePending) {
+        // Si estaba marcado para eliminación, eliminar del servidor
+        const response = await fetch(`https://mi-backendsecond.onrender.com/usuarios/${usuario.id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        });
+
+        if (response.ok) {
+          console.log('Usuario eliminado del servidor:', usuario);
+
+          // Eliminar de IndexedDB
+          const deleteTx = db.transaction('usuarios', 'readwrite');
+          await deleteTx.store.delete(usuario.id);
+        } else {
+          console.error('Error al eliminar usuario:', response.status);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error en la sincronización de usuarios:', error);
+  }
+};
+
+export const syncPagos = async () => {
+  if (!navigator.onLine) return;
+
+  try {
+    const storedPagos = await getPagos(); // Obtener pagos de IndexedDB
+
+    for (const pago of storedPagos) {
+      if (!pago.synced) {
+        // Enviar pagos guardados offline al servidor
+        const response = await axios.post(`${URL_BASE}/pagoscargagua`, pago, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        });
+
+        if (response.status === 201) {
+          await deletePagos(pago.id); // Eliminar de IndexedDB después de sincronizar
+        } else {
+          console.error('Error al sincronizar pago:', response.status);
+        }
+      }
+
+      if (pago.deletePending) {
+        // Si estaba marcado para eliminación, eliminar del servidor
+        const response = await axios.delete(`${URL_BASE}/pagoscargagua/${pago.id}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        });
+
+        if (response.status === 200) {
+          await deletePagos(pago.id);
+        } else {
+          console.error('Error al eliminar pago:', response.status);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error en la sincronización de pagos:', error);
+  }
+};
+
+
