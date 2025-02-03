@@ -3,7 +3,8 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import './NavbarStyles.css'; // Asegúrate de que esto venga después de Bootstrap para sobrescribir correctamente
 import { Dropdown } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
+
 
 export default function Navbar() {
   const navigate = useNavigate();

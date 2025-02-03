@@ -3,13 +3,20 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview",
-    "start": "vite preview"
-  },
+  
+  "build": {
+      "env": {
+        "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
+      }
+    },
+  
+ "scripts": {
+  "dev": "vite",
+  "build": "vite build",
+  "start": "vite preview",
+  "postinstall": "npm run build"
+  
+},
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
