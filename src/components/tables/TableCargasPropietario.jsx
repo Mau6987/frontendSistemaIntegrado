@@ -36,7 +36,7 @@ export default function TableCargasPropietario() {
   const token = localStorage.getItem('token');
   const propietarioId = localStorage.getItem('idUser'); // Asegúrate de que esto sea correcto
   const navigate = useNavigate();
-  const URL = `https://mi-backendsecond.onrender.com/cargasPropietario/${propietarioId}`;
+  const URL = `https://xvxsfhnjxj.execute-api.us-east-1.amazonaws.com/dev/cargasPropietario/${propietarioId}`;
   useEffect(() => {
     const fetchData = async () => {
       try {

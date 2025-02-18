@@ -52,7 +52,7 @@ export default function TableCargasAguaCliente() {
 
   const token = localStorage.getItem('token');
   const navigate = useNavigate();
-  const URL = `https://mi-backendsecond.onrender.com/cargascliente/${localStorage.getItem('idUser')}`;
+  const URL = `https://xvxsfhnjxj.execute-api.us-east-1.amazonaws.com/dev/cargascliente/${localStorage.getItem('idUser')}`;
 
   const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
@@ -63,7 +63,7 @@ export default function TableCargasAguaCliente() {
     const getTiposCamion = async () => {
               try {
                 if (navigator.onLine) {
-                  const response = await fetch('https://mi-backendsecond.onrender.com/tiposDeCamion', {
+                  const response = await fetch('https://xvxsfhnjxj.execute-api.us-east-1.amazonaws.com/dev/tiposDeCamion', {
                     headers: {
                       'Content-Type': 'application/json',
                       Authorization: `Bearer ${token}`,
@@ -90,7 +90,7 @@ export default function TableCargasAguaCliente() {
     const fetchUsuarios = async () => {
             try {
               if (navigator.onLine) {
-                const response = await fetch('https://mi-backendsecond.onrender.com/usuariosrol', {
+                const response = await fetch('https://xvxsfhnjxj.execute-api.us-east-1.amazonaws.com/dev/usuariosrol', {
                   headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`,

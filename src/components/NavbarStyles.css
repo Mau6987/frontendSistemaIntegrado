@@ -91,3 +91,37 @@
     background-color: rgb(40, 38, 38); /* Cambio a color morado al hacer hover */
     color: white;
 }
+.menu-icon {
+    display: none; /* Oculta el icono de menú en pantallas grandes */
+    cursor: pointer;
+    color: white;
+    font-size: 2rem;
+}
+
+@media (max-width: 768px) {
+    .menu-icon {
+        display: block; /* Asegura que el icono se muestre en pantallas pequeñas */
+    }
+
+    .nav-menu {
+        display: none; /* Oculta el menú principal en pantallas pequeñas */
+        flex-direction: column;
+        width: 100%; /* Ajusta al 100% para que ocupe todo el ancho */
+        position: absolute;
+        top: 80px; /* Ajusta según la altura de tu barra de navegación */
+        background-color: rgb(55, 51, 51);
+        border-radius: 0 0 13px 13px;
+        right: 0; /* Asegúrate de que el menú desplegable se alinee a la derecha */
+        left: 0; /* Añade left: 0 para que el menú ocupe todo el ancho */
+    }
+
+    .nav-menu.open {
+        display: flex; /* Muestra el menú cuando el estado es 'open' */
+    }
+
+    .nav-links a {
+        padding: 10px;
+        text-align: left;
+        display: block; /* Asegúrate de que los enlaces se muestren en bloque para un mejor formato */
+    }
+}

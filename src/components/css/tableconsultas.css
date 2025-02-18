@@ -1,0 +1,50 @@
+/* Estilos generales para la alineación y espaciado */
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%; /* Asegura que el contenedor tome todo el ancho */
+}
+
+/* Estilos para la tarjeta del formulario */
+.card {
+    width: 100%;
+    max-width: 900px;
+    margin: auto; /* Centra la tarjeta */
+}
+
+/* Estilos para los botones de exportar y nueva consulta */
+.text-center {
+    width: 100%; /* Asegura que el contenedor de los botones tome todo el ancho */
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap; /* Permite que los botones se envuelvan en pantallas más pequeñas */
+    gap: 10px; /* Espaciado entre botones */
+}
+
+/* Estilos para las tablas */
+.table-container { /* Asegúrate de agregar esta clase al contenedor de cada tabla en tu JSX */
+    width: 100%;
+    margin-top: 20px;
+}
+
+/* Personalizar los selectores para que sean más visibles y fáciles de usar */
+.select__control {
+    width: 100%; /* Ajusta al ancho disponible */
+    max-width: 300px; /* Máximo ancho del selector */
+}
+
+/* Ajustes responsive para dispositivos más pequeños */
+@media (max-width: 768px) {
+    .card {
+        padding: 20px;
+    }
+
+    .text-center {
+        flex-direction: column;
+    }
+
+    .select__control {
+        max-width: 100%; /* Los selectores toman todo el ancho en móviles */
+    }
+}

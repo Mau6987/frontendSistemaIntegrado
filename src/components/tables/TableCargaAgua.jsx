@@ -141,7 +141,7 @@ export default function TableCargasAgua() {
 
   const handleVerRegistro = async (registro) => {
     try {
-      const response = await fetch(`https://mi-backendsecond.onrender.com/cargagua/${registro.id}`, {
+      const response = await fetch(`https://xvxsfhnjxj.execute-api.us-east-1.amazonaws.com/dev/cargagua/${registro.id}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

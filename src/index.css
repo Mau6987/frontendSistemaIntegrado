@@ -1,17 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Estilos personalizados */
 body {
-  /* Fondo dinámico */
   background: radial-gradient(circle, #898a96 0%, #465458 100%);
-  width: 100%; /* Asegúrate de que el ancho se adapte a cualquier resolución */
-  height: 100vh; /* Ocupa toda la altura de la ventana */
+  width: 100%;
+  height: 100vh;
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-
-  /* Transición suave para cambios dinámicos */
   transition: background 0.5s ease-in-out;
 }
 
-/* Fondo dinámico en diferentes resoluciones */
 @media (max-width: 768px) {
   body {
     background: radial-gradient(circle, #6d6f79 0%, #3a4043 100%);

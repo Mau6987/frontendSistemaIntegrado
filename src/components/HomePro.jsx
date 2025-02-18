@@ -21,7 +21,7 @@ function HomePro() {
   const refreshToken = async () => {
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch('https://mi-backendsecond.onrender.com/refreshToken', {
+      const response = await fetch('https://xvxsfhnjxj.execute-api.us-east-1.amazonaws.com/dev/refreshToken', {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${token}`

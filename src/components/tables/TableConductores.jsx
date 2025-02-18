@@ -45,7 +45,7 @@ export default function TableConductoresPropietario() {
       try {
         if (navigator.onLine) {
           // Obtener datos del servidor
-          const response = await axios.get(`https://mi-backendsecond.onrender.com/conductores/${propietarioId}`, {
+          const response = await axios.get(`https://xvxsfhnjxj.execute-api.us-east-1.amazonaws.com/dev/conductores/${propietarioId}`, {
             headers: {
               'Authorization': `Bearer ${token}`,
             },
@@ -94,7 +94,7 @@ export default function TableConductoresPropietario() {
 
   const handleVerCargas = async (conductorId) => {
     try {
-      const response = await axios.get(`https://mi-backendsecond.onrender.com/cargascliente/${conductorId}`, {
+      const response = await axios.get(`https://xvxsfhnjxj.execute-api.us-east-1.amazonaws.com/dev/cargascliente/${conductorId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -113,7 +113,7 @@ export default function TableConductoresPropietario() {
 
   const handleVerPagos = async (conductorId) => {
     try {
-      const response = await axios.get(`https://mi-backendsecond.onrender.com/pagoscliente/${conductorId}`, {
+      const response = await axios.get(`https://xvxsfhnjxj.execute-api.us-east-1.amazonaws.com/dev/pagoscliente/${conductorId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

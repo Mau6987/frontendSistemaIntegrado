@@ -1,0 +1,48 @@
+/* Estilos generales para el contenedor principal */
+.container {
+    padding-top: 20px; /* Espacio superior para no pegar al navbar */
+}
+
+/* Estilos para las tarjetas */
+.card {
+    margin: 20px auto; /* Centrado automático y margen para separación */
+    max-width: 600px; /* Ancho máximo para las tarjetas */
+}
+
+/* Estilo para los formularios y su contenido */
+.form-group {
+    margin-bottom: 20px; /* Espaciado entre elementos del formulario */
+}
+
+/* Estilo para los títulos dentro de las tarjetas */
+.card-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+/* Estilo para los textos dentro de las tarjetas */
+.card-text {
+    font-size: 1rem; /* Tamaño de fuente para texto */
+    margin-bottom: 10px; /* Espaciado debajo de cada texto */
+}
+
+/* Estilo para los botones */
+.button {
+    font-size: 1rem;
+    font-weight: bold;
+    padding: 10px 20px; /* Padding para hacer el botón más grande */
+}
+
+/* Estilo para los títulos de secciones */
+.section-title {
+    text-align: center;
+    font-size: 1.5rem;
+    margin-top: 40px; /* Margen superior para separar de otros elementos */
+}
+
+/* Media queries para responsividad */
+@media (max-width: 768px) {
+    .card {
+        width: 90%; /* Ancho más pequeño en dispositivos móviles */
+    }
+}

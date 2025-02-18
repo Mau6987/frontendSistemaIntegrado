@@ -32,7 +32,7 @@ export default function TablePagoCliente() {
 
   const token = localStorage.getItem('token');
   const navigate = useNavigate();
-  const URL = `https://mi-backendsecond.onrender.com/pagoscliente/${localStorage.getItem('idUser')}`;
+  const URL = `https://xvxsfhnjxj.execute-api.us-east-1.amazonaws.com/dev/pagoscliente/${localStorage.getItem('idUser')}`;
 
   const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };

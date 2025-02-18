@@ -8,7 +8,8 @@ import {
   saveUsuario,
   getUsuarios,
   deleteUsuario,
-  savePropietario,syncPagos 
+  savePropietario,
+  getPropietarios
 } from '../../services/indexedDB';
 
 const useWindowWidth = () => {
@@ -54,7 +55,7 @@ export default function TableUsuarios() {
 
   const token = localStorage.getItem('token');
   const navigate = useNavigate();
-  const URL = 'https://mi-backendsecond.onrender.com/usuarios';
+  const URL = 'https://xvxsfhnjxj.execute-api.us-east-1.amazonaws.com/dev/usuarios';
   const hiddenInputRef = useRef(null); // Referencia al campo de número de tarjeta
   const [currentPage, setCurrentPage] = useState(1); // Página actual
   const [usersPerPage] = useState(6); // Cantidad de usuarios por página
@@ -311,7 +312,7 @@ export default function TableUsuarios() {
       return;
     }
     try {
-      const response = await fetch('https://mi-backendsecond.onrender.com/verificartarjeta', {
+      const response = await fetch('https://xvxsfhnjxj.execute-api.us-east-1.amazonaws.com/dev/verificartarjeta', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

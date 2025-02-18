@@ -3,8 +3,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import './NavbarStyles.css'; // Asegúrate de que esto venga después de Bootstrap para sobrescribir correctamente
 import { Dropdown } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { useNavigate } from "react-router-dom";
-
+import { useNavigate } from 'react-router-dom';
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -82,7 +81,7 @@ export default function Navbar() {
                 <Dropdown.Item onClick={() => handleTableSelect('cargagua2')}>
                   Gestión de Carga de Agua2
                 </Dropdown.Item>
-                
+                                
                 <Dropdown.Item onClick={() => handleTableSelect('pagos2')}>
                   Gestión de Pagos2
                 </Dropdown.Item>

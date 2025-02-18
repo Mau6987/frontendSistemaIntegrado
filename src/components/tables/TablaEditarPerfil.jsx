@@ -28,7 +28,7 @@ export default function TableEditarPerfil() {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const navigate = useNavigate();
-  const apiUrl = `https://mi-backendsecond.onrender.com/perfil/${localStorage.getItem('idUser')}`;
+  const apiUrl = `https://xvxsfhnjxj.execute-api.us-east-1.amazonaws.com/dev/perfil/${localStorage.getItem('idUser')}`;
   const windowWidth = useWindowWidth();
   const isMobile = windowWidth < 768;
 

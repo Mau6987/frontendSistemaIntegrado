@@ -48,7 +48,7 @@ export default function PagoCargaAgua() {
   const [editMode, setEditMode] = useState(false);
   const token = localStorage.getItem('token');
   const navigate = useNavigate();
-  const URL_BASE = 'https://mi-backendsecond.onrender.com';
+  const URL_BASE = 'https://xvxsfhnjxj.execute-api.us-east-1.amazonaws.com/dev';
 
   useEffect(() => {
     const role = localStorage.getItem('rol');

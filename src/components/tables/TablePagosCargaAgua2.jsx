@@ -49,7 +49,7 @@ export default function PagoCargaAgua() {
   const [editMode, setEditMode] = useState(false);
   const token = localStorage.getItem('token');
   const navigate = useNavigate();
-  const URL_BASE = 'https://mi-backendsecond.onrender.com';
+  const URL_BASE = 'https://xvxsfhnjxj.execute-api.us-east-1.amazonaws.com/dev';
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6; // Máximo de registros por página
   
@@ -504,24 +504,24 @@ const currentPagos = pagosFiltrados.slice(indexOfFirstItem, indexOfLastItem);
       </tr>
     </thead>
   );
-
   const renderRows = () => (
     <tbody>
-  {currentPagos.map((pago) => (
-    <tr key={pago.id}>
-      <td>{pago.id}</td>
-      <td>{usuarios.find(usuario => usuario.id === pago.usuarioId)?.username || 'N/A'}</td>
-      <td>{pago.monto}</td>
-      <td>{new Date(pago.fechaHora).toLocaleString()}</td>
-      <td>
-        <Button variant="info">Ver</Button>{' '}
-        <Button variant="warning">Editar</Button>{' '}
-        <Button variant="danger">Eliminar</Button>
-      </td>
-    </tr>
-  ))}
-</tbody>
+      {currentPagos.map((pago) => (
+        <tr key={pago.id}>
+          <td>{pago.id}</td>
+          <td>{usuarios.find(usuario => usuario.id === pago.usuarioId)?.username || 'N/A'}</td>
+          <td>{pago.monto}</td>
+          <td>{new Date(pago.fechaHora).toLocaleString()}</td>
+          <td>
+            <Button variant="info" onClick={() => handleVerPago(pago)}>Ver</Button>{' '}
+            <Button variant="warning" onClick={() => handleEditPago(pago)}>Editar</Button>{' '}
+            <Button variant="danger" onClick={() => handleDeletePago(pago.id)}>Eliminar</Button>
+          </td>
+        </tr>
+      ))}
+    </tbody>
   );
+  
 
   const renderTable = () => (
     <Table responsive striped bordered hover className="pago-carga-agua-table">
@@ -566,8 +566,7 @@ const currentPagos = pagosFiltrados.slice(indexOfFirstItem, indexOfLastItem);
     <>
       <Navbar />
       <Container className="main-container">
-        <h2 className="mt-4">Pagos de Carga de Agua</h2>
-  
+ 
         {/* BOTÓN DE FILTROS Y REGISTRO */}
         <div className="d-flex justify-content-between mb-3">
           <Button variant="success" onClick={() => {

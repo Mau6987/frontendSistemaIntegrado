@@ -3,7 +3,8 @@ import { Card, Container, Row, Col, Button, FormGroup, FormLabel } from 'react-b
 import Select from 'react-select';
 import Navbar from '../Navbar';
 
-const URL = 'https://mi-backendsecond.onrender.com/';
+import '../css/TableConsultaUsuario.css'; // Asegúrate de que la ruta sea correcta
+const URL = 'https://xvxsfhnjxj.execute-api.us-east-1.amazonaws.com/dev/';
 
 const TableConsultaUsuario = () => {
   const [usuarios, setUsuarios] = useState([]);

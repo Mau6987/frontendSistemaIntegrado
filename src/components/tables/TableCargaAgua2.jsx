@@ -6,19 +6,6 @@ import Select from 'react-select';
 import '../css/TableCargasAgua.css';
 
 
-// Importaciones de IndexedDB
-import { 
-  saveTipoCamion, 
-  getTiposDeCamion, 
-  saveUsuario, 
-  getUsuarios,
-  saveCargaAgua, 
-  getCargasAgua, 
-  deleteCargaAgua,
-  syncCargasAgua
-} from '../../services/indexedDB';
-
-
 const useWindowWidth = () => {
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
@@ -89,7 +76,7 @@ const getMonthName = (month) => {
 
   const token = localStorage.getItem('token');
   const navigate = useNavigate();
-  const URL = 'https://mi-backendsecond.onrender.com/cargagua';
+  const URL = 'https://xvxsfhnjxj.execute-api.us-east-1.amazonaws.com/dev/cargagua';
 
 
   const [selectedStatus, setSelectedStatus] = useState([]); // ✅ Permitir múltiples filtros de estado
@@ -119,75 +106,62 @@ const prevPage = () => {
     setCurrentPage(currentPage - 1);
   }
 };
-  useEffect(() => {
-    const role = localStorage.getItem('rol');
-    if (role !== 'admin') {
+useEffect(() => {
+  const role = localStorage.getItem('rol');
+  if (role !== 'admin') {
       navigate('/');
-    } else {
-      const  fetchTiposCamion = async () => {
-        try {
-          if (navigator.onLine) {
-            const response = await fetch('https://mi-backendsecond.onrender.com/tiposDeCamion', {
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`,
-              },
-            });
-            if (response.ok) {
-              const data = await response.json();
-              setTiposCamion(data);
-              // Guardar en IndexedDB
-              await Promise.all(data.map((tipoCamion) => saveTipoCamion(tipoCamion)));
-            } else {
-              console.error('Error al obtener los tipos de camión del servidor.');
-            }
-          } else {
-            // Obtener datos desde IndexedDB
-            const cachedTiposCamion = await getTiposDeCamion();
-            setTiposCamion(cachedTiposCamion);
+  } else {
+      const fetchTiposCamion = async () => {
+          try {
+              const response = await fetch('https://xvxsfhnjxj.execute-api.us-east-1.amazonaws.com/dev/tiposDeCamion', {
+                  headers: {
+                      'Content-Type': 'application/json',
+                      Authorization: `Bearer ${token}`,
+                  },
+              });
+              if (response.ok) {
+                  const data = await response.json();
+                  setTiposCamion(data);
+              } else {
+                  console.error('Error al obtener los tipos de camión del servidor.');
+              }
+          } catch (error) {
+              console.error('Error al obtener tipos de camión:', error);
           }
-        } catch (error) {
-          console.error('Error al obtener tipos de camión:', error);
-        }
       };
-  
+
       const fetchUsuarios = async () => {
-        try {
-          if (navigator.onLine) {
-            const response = await fetch('https://mi-backendsecond.onrender.com/usuariosrol', {
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`,
-              },
-            });
-            if (response.ok) {
-              const data = await response.json();
-              setUsuarios(data);
-              // Guardar en IndexedDB
-              await Promise.all(data.map((usuario) => saveUsuario(usuario)));
-            } else {
-              console.error('Error al obtener usuarios del servidor.');
-            }
-          } else {
-            // Obtener datos desde IndexedDB
-            const cachedUsuarios = await getUsuarios();
-            setUsuarios(cachedUsuarios);
+          try {
+              const response = await fetch('https://xvxsfhnjxj.execute-api.us-east-1.amazonaws.com/dev/usuariosrol', {
+                  headers: {
+                      'Content-Type': 'application/json',
+                      Authorization: `Bearer ${token}`,
+                  },
+              });
+              if (response.ok) {
+                  const data = await response.json();
+                  setUsuarios(data);
+              } else {
+                  console.error('Error al obtener usuarios del servidor.');
+              }
+          } catch (error) {
+              console.error('Error al obtener usuarios:', error);
           }
-        } catch (error) {
-          console.error('Error al obtener usuarios:', error);
-        }
       };
+
       const months = Array.from({ length: 12 }, (_, i) => i + 1); // Genera 1 a 12
       setAvailableMonths(months);
+
       fetchData();
       fetchUsuarios();
       fetchTiposCamion();
-       // Ajustar días al cambiar mes/año
-    }
-   }, [diaInicio, diaFin, selectedMonth, selectedYear, selectedStatus]);
-   const handleMonthChange = (event) => {
-    setSelectedMonth(parseInt(event.target.value));
-  };
+  }
+}, [diaInicio, diaFin, selectedMonth, selectedYear, selectedStatus]);
+
+const handleMonthChange = (event) => {
+  setSelectedMonth(parseInt(event.target.value));
+};
+
   
   // 📌 Función para cambiar el estado seleccionado
   const handleStatusFilterChange = (event) => {
@@ -246,7 +220,7 @@ const prevPage = () => {
 
   const handleVerRegistro = async (registro) => {
     try {
-      const response = await fetch(`https://mi-backendsecond.onrender.com/cargagua/${registro.id}`, {
+      const response = await fetch(`https://xvxsfhnjxj.execute-api.us-east-1.amazonaws.com/dev/cargagua/${registro.id}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -288,111 +262,96 @@ const prevPage = () => {
   const handleGuardarCreateRegistro = async (e) => {
     e.preventDefault();
     const form = e.currentTarget;
-  
-    if (form.checkValidity() && estado !== "") {
-      const nuevoRegistro = {
-        id: navigator.onLine ? undefined : `offline-${Date.now()}`, // Generar ID temporal si está offline
-        fechaHora: fechaHora,
-        estado: estado,
-        usuarioId: usuarioId,
-        tipoCamionId: tipoCamionId,
-      };
-  
-      try {
-        if (navigator.onLine) {
-          const response = await fetch(URL, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify(nuevoRegistro),
-          });
-  
-          if (response.ok) {
-            setShowModal(false);
-            fetchData();
-            alert('Registro creado con éxito.');
-          } else {
-            console.error('Error al guardar en el servidor.');
-          }
-        } else {
-          // Guardar en IndexedDB con ID temporal
-          await saveCargaAgua(nuevoRegistro);
-          setShowModal(false);
-          alert('Modo offline: El registro se guardó localmente y se sincronizará cuando haya conexión.');
+
+    if (form.checkValidity() && estado !== "" && usuarioId) {
+        const nuevoRegistro = {
+            fechaHora,
+            estado,
+            usuarioId,
+            tipoCamionId
+        };
+
+        try {
+            const response = await fetch(URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(nuevoRegistro),
+            });
+
+            if (response.ok) {
+                setShowModal(false);
+                fetchData();
+                alert('Registro creado con éxito.');
+            } else {
+                console.error('Error al guardar en el servidor.');
+                alert('No se pudo guardar el registro.');
+            }
+        } catch (error) {
+            console.error('Error al guardar el registro:', error);
+            alert('Error de conexión. Inténtalo nuevamente.');
         }
-      } catch (error) {
-        console.error('Error al guardar el registro:', error);
-      }
     } else {
-      setValidated(true);
+        alert("Error: Selecciona un usuario antes de guardar.");
+        setValidated(true);
     }
-  };
-  const handleSaveEditRegistro = async (e) => {
-    e.preventDefault();
-    const form = e.currentTarget;
-  
-    if (form.checkValidity()) {
+};
+
+const handleSaveEditRegistro = async (e) => {
+  e.preventDefault();
+  const form = e.currentTarget;
+
+  if (form.checkValidity()) {
       try {
-        if (navigator.onLine) {
-          // Si hay conexión, actualizar directamente en el servidor
           const response = await fetch(`${URL}/${selectedRegistro.id}`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify(selectedRegistro),
+              method: 'PUT',
+              headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify(selectedRegistro),
           });
-  
+
           if (response.ok) {
-            setShowModal(false);
-            fetchData(); // Refrescar los datos desde el servidor
-            alert('Registro actualizado con éxito.');
+              setShowModal(false);
+              fetchData();
+              alert('Registro actualizado con éxito.');
           } else {
-            console.error('Error al actualizar en el servidor.');
+              console.error('Error al actualizar en el servidor.');
+              alert('No se pudo actualizar el registro.');
           }
-        } else {
-          // Guardar en IndexedDB y marcar como "pendiente de sincronización"
-          await saveCargaAgua({ ...selectedRegistro, updatePending: true });
-          setShowModal(false);
-          alert('Modo offline: Los cambios se guardaron localmente y se sincronizarán cuando haya conexión.');
-        }
       } catch (error) {
-        console.error('Error al guardar los cambios:', error);
+          console.error('Error al guardar los cambios:', error);
+          alert('Error de conexión. Inténtalo nuevamente.');
       }
-    } else {
+  } else {
       setValidated(true);
-    }
-  };
-  
-  const handleEliminarRegistro = async (registroId) => {
-    try {
-      if (navigator.onLine) {
-        // Si hay conexión, eliminar directamente en el servidor
-        const response = await fetch(`${URL}/${registroId}`, {
+  }
+};
+
+const handleEliminarRegistro = async (registroId) => {
+  try {
+      const response = await fetch(`${URL}/${registroId}`, {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${token}` },
-        });
-  
-        if (response.ok) {
-          fetchData(); // Refrescar los datos desde el servidor
+      });
+
+      if (response.ok) {
+          fetchData();
           setShow(false);
           alert('Registro eliminado con éxito.');
-        } else {
-          console.error('Error al eliminar el registro en el servidor.');
-        }
       } else {
-        // Marcar el registro como "pendiente de eliminación"
-        await saveCargaAgua({ id: registroId, deletePending: true });
-        setShow(false);
-        alert('Modo offline: El registro se eliminará cuando haya conexión.');
+          console.error('Error al eliminar el registro en el servidor.');
+          alert('No se pudo eliminar el registro.');
       }
-    } catch (error) {
+  } catch (error) {
       console.error('Error al eliminar el registro:', error);
-    }
-  };
+      alert('Error de conexión. Inténtalo nuevamente.');
+  }
+};
+
   
   const customSelectStyles = {
     control: (base) => ({
@@ -557,78 +516,41 @@ const prevPage = () => {
     }
   };
  
-  
-
   const fetchData = async () => {
     try {
-        if (navigator.onLine) {
-            const response = await fetch(URL, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-
-            if (response.ok) {
-                let jsonData = await response.json();
-
-                // 🔹 Ordenar por fechaHora (Más recientes primero)
-                jsonData.sort((a, b) => new Date(b.fechaHora) - new Date(a.fechaHora));
-
-                // 🔹 Filtrar por estado si está seleccionado
-                if (selectedStatus.length > 0) {
-                    jsonData = jsonData.filter((registro) => selectedStatus.includes(registro.estado));
-                }
-
-                jsonData = jsonData.filter((registro) => {
-                  const registroFecha = new Date(registro.fechaHora);
-                  const diaRegistro = registroFecha.getDate();
-              
-                  return (
-                      diaRegistro >= diaInicio &&
-                      diaRegistro <= diaFin &&
-                      registroFecha.getMonth() + 1 === selectedMonth &&
-                      registroFecha.getFullYear() === selectedYear
-                  );
-              });
-              
-              
-
-                // ✅ Guardar en IndexedDB para uso offline
-                await Promise.all(jsonData.map((registro) => saveCargaAgua(registro)));
-
-                // ✅ Actualizar estado con los datos filtrados
-                setData(jsonData);
-                setCurrentPage(1);
-            } else if (response.status === 401) {
-                navigate('/');
-            }
-        } else {
-            // 🔹 Obtener datos desde IndexedDB si está offline
-            let cachedData = await getCargasAgua();
-
-            // 🔹 Ordenar registros en modo offline
-            cachedData.sort((a, b) => new Date(b.fechaHora) - new Date(a.fechaHora));
-
-            // 🔹 Aplicar filtros en modo offline
+        const response = await fetch(URL, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+  
+        if (response.ok) {
+            let jsonData = await response.json();
+            jsonData.sort((a, b) => new Date(b.fechaHora) - new Date(a.fechaHora));
+  
             if (selectedStatus.length > 0) {
-                cachedData = cachedData.filter((registro) => selectedStatus.includes(registro.estado));
+                jsonData = jsonData.filter((registro) => selectedStatus.includes(registro.estado));
             }
-
-            // 🔹 Filtrar por día, mes y año seleccionados
-            cachedData = cachedData.filter((registro) => {
+  
+            jsonData = jsonData.filter((registro) => {
                 const registroFecha = new Date(registro.fechaHora);
                 return (
-                    registroFecha.getDate() === selectedDay &&
+                    registroFecha.getDate() >= diaInicio &&
+                    registroFecha.getDate() <= diaFin &&
                     registroFecha.getMonth() + 1 === selectedMonth &&
                     registroFecha.getFullYear() === selectedYear
                 );
             });
-
-            setData(cachedData);
+  
+            setData(jsonData);
             setCurrentPage(1);
+        } else if (response.status === 401) {
+            navigate('/');
         }
     } catch (error) {
         console.error('Error al obtener datos:', error);
     }
-};
+  };
+  
+
 
 
 
@@ -874,5 +796,5 @@ const currentItems = data.slice(indexOfFirstItem, indexOfLastItem);
     </>
 );
 
-  
+  //sdsdad
 }

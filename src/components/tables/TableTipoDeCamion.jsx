@@ -44,7 +44,7 @@ export default function TableTipoCamion() {
   const navigate = useNavigate();
   const windowWidth = useWindowWidth();
   const isMobile = windowWidth < 768;
-  const URL = 'https://mi-backendsecond.onrender.com/tiposDeCamion';
+  const URL = 'https://xvxsfhnjxj.execute-api.us-east-1.amazonaws.com/dev/tiposDeCamion';
 
   useEffect(() => {
     const updateOfflineStatus = () => setOfflineMode(!navigator.onLine);
