@@ -8,13 +8,12 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate', // Registro automático de actualizaciones
       manifest: {
-        name: 'Mi Aplicación PWA',
+        name: 'Sistema integrado LOS PINOS',
         short_name: 'MiApp',
         description: 'Una aplicación PWA creada con Vite y React',
         theme_color: '#ffffff',
         background_color: '#ffffff',
         display: 'standalone',
-        
         orientation: 'portrait',
         icons: [
           {
@@ -62,4 +61,8 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    rollupOptions: {
+      },
+  },
 });
