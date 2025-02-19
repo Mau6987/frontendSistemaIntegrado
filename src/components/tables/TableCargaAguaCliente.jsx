@@ -36,6 +36,7 @@ export default function TableCargasAguaCliente() {
   const isMobile = windowWidth < 768;
   const [fechaHora, setFechaHora] = useState("");
   const [estado, setEstado] = useState("deuda");
+  const [showFilter, setShowFilter] = useState(false);
 
   const [tiposCamion, setTiposCamion] = useState([]);
   const [tipoCamionId, setTipoCamionId] = useState(0);
@@ -53,12 +54,39 @@ export default function TableCargasAguaCliente() {
   const token = localStorage.getItem('token');
   const navigate = useNavigate();
   const URL = `https://xvxsfhnjxj.execute-api.us-east-1.amazonaws.com/dev/cargascliente/${localStorage.getItem('idUser')}`;
+  const [filteredData, setFilteredData] = useState([]); // Datos filtrados
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(6); // Cantidad de elementos por página
+  
+  // Filtros
+  const today = new Date();
+  const [selectedYear, setSelectedYear] = useState(today.getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(today.getMonth() + 1);
+  const [selectedStatus, setSelectedStatus] = useState([]); // Permitir múltiples estados
+  const indexOfLastItem = currentPage * itemsPerPage;
+const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
 
   const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
     return new Date(dateString).toLocaleDateString('es-ES', options);
   };
-
+  const applyFilters = () => {
+    let filtered = data;
+  
+    if (selectedStatus.length > 0) {
+      filtered = filtered.filter((registro) => selectedStatus.includes(registro.estado));
+    }
+  
+    filtered = filtered.filter((registro) => {
+      const fecha = new Date(registro.fechaHora);
+      return fecha.getFullYear() === selectedYear && fecha.getMonth() + 1 === selectedMonth;
+    });
+  
+    setFilteredData(filtered);
+    setCurrentPage(1); // Reiniciar a la primera página tras aplicar filtros
+  };
+  
   useEffect(() => {
     const getTiposCamion = async () => {
               try {
@@ -117,7 +145,8 @@ export default function TableCargasAguaCliente() {
     fetchData();
     fetchUsuarios();
     getTiposCamion();
-  }, []);
+    applyFilters();
+  }, [selectedYear, selectedMonth, selectedStatus]);
 
   const handleVerRegistro = (registro) => {
     setSelectedRegistro(registro);
@@ -140,8 +169,9 @@ export default function TableCargasAguaCliente() {
         if (response.ok) {
           const jsonData = await response.json();
           setData(jsonData);
+          setFilteredData(jsonData); // Guardar datos filtrados inicialmente
   
-          // Guardar en IndexedDB
+          // Guardar en IndexedDB para uso offline
           await Promise.all(
             jsonData.map(async (registro) => {
               try {
@@ -153,13 +183,13 @@ export default function TableCargasAguaCliente() {
           );
         } else if (response.status === 401) {
           navigate('/');
-        } else {
-          console.error('Error al obtener los datos del servidor.');
         }
       } else {
+        // Modo Offline: Obtener datos desde IndexedDB
         const cachedData = await getCargasAguaCliente();
         console.log('Datos cargados desde IndexedDB:', cachedData);
         setData(cachedData);
+        setFilteredData(cachedData);
       }
     } catch (error) {
       console.error('Error al obtener datos:', error);
@@ -179,24 +209,38 @@ export default function TableCargasAguaCliente() {
     );
   };
 
-  const renderRows = () => {
+  const renderRows = () => (
+    <tbody>
+      {currentItems.map((item, index) => (
+        <tr key={index}>
+          <td>{formatDate(item.fechaHora)}</td>
+          <td>{item.estado}</td>
+          <td>{item.usuario?.nombre}</td>
+          <td>
+            <Button variant="success" onClick={() => handleVerRegistro(item)}>
+              Ver
+            </Button>
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  );
+  const renderPagination = () => {
+    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  
     return (
-      <tbody>
-        {data.map((item, index) => (
-          <tr key={index}>
-            <td data-label="Fecha y Hora">{formatDate(item.fechaHora)}</td>
-            <td data-label="Estado">{item.estado}</td>
-            <td data-label="Nombre de Usuario">{item.usuario?.nombre}</td>
-            <td data-label="Ver Registro">
-              <button className="btn btn-success" onClick={() => handleVerRegistro(item)}>
-                <i className="fa-solid fa-eye"></i>
-              </button>
-            </td>
-          </tr>
-        ))}
-      </tbody>
+      <div className="pagination-div">
+        <Button variant="secondary" onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1}>
+          Anterior
+        </Button>
+        <span className="mx-2">Página {currentPage} de {totalPages}</span>
+        <Button variant="secondary" onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages}>
+          Siguiente
+        </Button>
+      </div>
     );
   };
+  
 
   const renderModalData = () => {
     if (selectedRegistro) {
@@ -264,23 +308,80 @@ export default function TableCargasAguaCliente() {
       })}
     </div>
   );
-
   return (
     <>
+      <Navbar />
       <div className="main-container">
-        <Navbar />
+        
+        {/* 🔹 Tabla de Datos */}
         <div className="tabla-div">
-          {isMobile ? renderCards() : renderTable()}
+          {renderTable()}
         </div>
+  
+        {/* 🔹 Paginación Debajo de la Tabla */}
+        <div className="pagination-container">
+          {renderPagination()}
+        </div>
+  
+        {/* 🔹 Botón para Abrir el Filtro en un Modal */}
+        <div className="filter-button-container">
+          <Button variant="primary" onClick={() => setShowFilter(true)}>
+            Mostrar Filtros
+          </Button>
+        </div>
+  
+        {/* 🔹 Modal para Filtros */}
+        <Modal show={showFilter} onHide={() => setShowFilter(false)} centered>
+          <ModalHeader closeButton>
+            <ModalTitle>Filtrar Registros</ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <FormGroup>
+              <FormLabel>Filtrar por Año:</FormLabel>
+              <FormControl type="number" value={selectedYear} onChange={(e) => setSelectedYear(parseInt(e.target.value))} />
+            </FormGroup>
+  
+            <FormGroup className="mt-3">
+              <FormLabel>Filtrar por Mes:</FormLabel>
+              <FormControl as="select" value={selectedMonth} onChange={(e) => setSelectedMonth(parseInt(e.target.value))}>
+                {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+                  <option key={month} value={month}>{new Date(2021, month - 1).toLocaleString('es-ES', { month: 'long' })}</option>
+                ))}
+              </FormControl>
+            </FormGroup>
+  
+            <FormGroup className="mt-3">
+              <FormLabel>Filtrar por Estado:</FormLabel>
+              <Form.Check type="checkbox" label="Deuda" value="deuda" onChange={(e) => {
+                const value = e.target.value;
+                setSelectedStatus(prev => prev.includes(value) ? prev.filter(s => s !== value) : [...prev, value]);
+              }} />
+              <Form.Check type="checkbox" label="Pagado" value="pagado" onChange={(e) => {
+                const value = e.target.value;
+                setSelectedStatus(prev => prev.includes(value) ? prev.filter(s => s !== value) : [...prev, value]);
+              }} />
+            </FormGroup>
+          </ModalBody>
+          <Modal.Footer>
+            <Button variant="success" onClick={applyFilters}>Aplicar Filtros</Button>
+            <Button variant="danger" onClick={() => setShowFilter(false)}>Cerrar</Button>
+          </Modal.Footer>
+        </Modal>
+  
       </div>
+  
+      {/* 🔹 Modal de Detalles */}
       <Modal show={showModal} onHide={handleCloseModal}>
         <ModalHeader closeButton>
-          <ModalTitle style={{ color: "red" }}>
-            {selectedRegistro ? 'Detalles del registro' : ''}
-          </ModalTitle>
+          <ModalTitle>Detalles del Registro</ModalTitle>
         </ModalHeader>
-        {renderModalData()}
+        <ModalBody>
+          <p><strong>Fecha:</strong> {selectedRegistro?.fechaHora}</p>
+          <p><strong>Estado:</strong> {selectedRegistro?.estado}</p>
+          <p><strong>Usuario:</strong> {selectedRegistro?.usuario?.nombre}</p>
+        </ModalBody>
       </Modal>
     </>
   );
+  
 }

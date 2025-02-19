@@ -70,4 +70,26 @@
   .card-custom .card-body .d-flex span strong {
     color: #c0e0df9e !important;
   }
-  
+  /* Contenedor del botón de filtros */
+.filter-button-container {
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+/* Contenedor de los filtros (aparece solo cuando showFilter es true) */
+
+
+/* Contenedor de los filtros (aparece solo cuando showFilter es true) */
+.filter-container {
+  width: 100%;
+  max-width: 960px;
+  margin-top: 15px;
+  margin-bottom: 15px;
+}
+
+/* Asegurar que la paginación siempre esté centrada y debajo de la tabla */
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}

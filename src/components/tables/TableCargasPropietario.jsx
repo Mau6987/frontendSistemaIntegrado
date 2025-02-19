@@ -5,38 +5,25 @@ import Navbar from '../Navbar';
 import axios from 'axios';
 import '../css/TableCargasAguaCliente.css'; // Reutiliza el CSS existente
 
-const useWindowWidth = () => {
-  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
-
-  useEffect(() => {
-    const handleResize = () => {
-      setWindowWidth(window.innerWidth);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []);
-
-  return windowWidth;
-};
-import { 
-  saveCargasAguaPropietario,
-  getCargasAguaPropietario
-  
-} from '../../services/indexedDB';
+import { saveCargasAguaPropietario, getCargasAguaPropietario } from '../../services/indexedDB';
 
 export default function TableCargasPropietario() {
-  const windowWidth = useWindowWidth();
-  const isMobile = windowWidth < 768;
   const [data, setData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]); // Datos filtrados
   const [showModal, setShowModal] = useState(false);
+  const [showFilter, setShowFilter] = useState(false); // Controla el modal de filtro
   const [selectedRegistro, setSelectedRegistro] = useState(null);
+
+  // Estados para Filtros
+  const [fechaInicio, setFechaInicio] = useState('');
+  const [fechaFin, setFechaFin] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState([]); // Permite múltiples filtros de estado
+
   const token = localStorage.getItem('token');
-  const propietarioId = localStorage.getItem('idUser'); // Asegúrate de que esto sea correcto
+  const propietarioId = localStorage.getItem('idUser'); 
   const navigate = useNavigate();
   const URL = `https://xvxsfhnjxj.execute-api.us-east-1.amazonaws.com/dev/cargasPropietario/${propietarioId}`;
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -44,13 +31,13 @@ export default function TableCargasPropietario() {
           console.error('URL o token no están definidos.');
           return;
         }
-  
+
         if (navigator.onLine) {
           try {
             const response = await fetch(URL, {
               headers: { Authorization: `Bearer ${token}` },
             });
-  
+
             if (!response.ok) {
               if (response.status === 401) {
                 navigate('/');
@@ -58,10 +45,11 @@ export default function TableCargasPropietario() {
                 throw new Error(`Error HTTP: ${response.status} ${response.statusText}`);
               }
             }
-  
+
             const jsonData = await response.json();
             setData(jsonData);
-  
+            setFilteredData(jsonData);
+
             // Guardar en IndexedDB
             await Promise.all(
               jsonData.map(async (registro) => {
@@ -72,11 +60,12 @@ export default function TableCargasPropietario() {
             console.error('Error al obtener los datos del servidor:', error);
           }
         }
-  
+
         // Obtener datos desde IndexedDB
         const cachedData = await getCargasAguaPropietario();
         if (cachedData && cachedData.length > 0) {
           setData(cachedData);
+          setFilteredData(cachedData);
           console.log('Datos cargados desde IndexedDB.');
         } else {
           console.warn('No hay datos disponibles en IndexedDB.');
@@ -85,10 +74,28 @@ export default function TableCargasPropietario() {
         console.error('Error general en fetchData:', error);
       }
     };
-  
+
     fetchData();
   }, [URL, token, navigate]);
-  
+
+  // Aplicar Filtros
+  const applyFilters = () => {
+    let filtered = data;
+
+    if (fechaInicio && fechaFin) {
+      filtered = filtered.filter((registro) => {
+        const fechaRegistro = new Date(registro.fechaHora);
+        return fechaRegistro >= new Date(fechaInicio) && fechaRegistro <= new Date(fechaFin);
+      });
+    }
+
+    if (selectedStatus.length > 0) {
+      filtered = filtered.filter((registro) => selectedStatus.includes(registro.estado));
+    }
+
+    setFilteredData(filtered);
+    setShowFilter(false); // Cierra el modal después de aplicar los filtros
+  };
 
   const handleVerRegistro = (registro) => {
     setSelectedRegistro(registro);
@@ -117,107 +124,87 @@ export default function TableCargasPropietario() {
 
   const renderRows = () => (
     <tbody>
-      {data.map((item, index) => (
+      {filteredData.map((item, index) => (
         <tr key={index}>
-          <td data-label="Fecha y Hora">{formatDate(item.fechaHora)}</td>
-          <td data-label="Estado">{item.estado}</td>
-          <td data-label="Nombre de Usuario">{item.usuario?.nombre}</td>
-         
-          <td data-label="Ver Registro">
-            <button className="btn btn-success" onClick={() => handleVerRegistro(item)}>
-              <i className="fa-solid fa-eye"></i>
-            </button>
+          <td>{formatDate(item.fechaHora)}</td>
+          <td>{item.estado}</td>
+          <td>{item.usuario?.nombre}</td>
+          <td>
+            <Button variant="success" onClick={() => handleVerRegistro(item)}>
+              Ver
+            </Button>
           </td>
-          
         </tr>
       ))}
     </tbody>
   );
 
-  const renderModalData = () => {
-    if (selectedRegistro) {
-      return (
-        <ModalBody>
-          <FormGroup className="mb-3">
-            <FormLabel style={{ color: "red" }}>Fecha/Hora</FormLabel>
-            <FormControl
-              type="text"
-              value={new Date(selectedRegistro.fechaHora).toLocaleString()}
-              readOnly
-              plaintext
-            />
-          </FormGroup>
-          <FormGroup className="mb-3">
-            <FormLabel style={{ color: "red" }}>Estado</FormLabel>
-            <FormControl type="text" value={selectedRegistro.estado} readOnly plaintext />
-          </FormGroup>
-          
-          <FormGroup className="mb-3">
-            <FormLabel style={{ color: "red" }}>Nombre de Usuario</FormLabel>
-            <FormControl type="text" value={selectedRegistro.usuario?.nombre} readOnly plaintext />
-          </FormGroup>
-        </ModalBody>
-      );
-    }
-  };
-
-  const renderTable = () => (
-    <Table responsive striped bordered hover variant="dark">
-      {renderHeaders()}
-      {renderRows()}
-    </Table>
-  );
-
-  const renderCards = () => (
-    <div>
-      {data.map((item, index) => {
-        const formattedDate = formatDate(item.fechaHora);
-        return (
-          <Card key={index} className="mb-3 card-custom">
-            <Card.Body>
-              <div className="d-flex justify-content-between">
-                <span><strong>Fecha y Hora:</strong></span>
-                <span>{formattedDate}</span>
-              </div>
-              <div className="d-flex justify-content-between">
-                <span><strong>Estado:</strong></span>
-                <span>{item.estado}</span>
-              </div>
-              <div className="d-flex justify-content-between">
-                <span><strong>Nombre de Usuario:</strong></span>
-                <span>{item.usuario?.nombre}</span>
-              </div>
-              <div className="d-flex justify-content-between">
-                <span><strong>Tipo de Camión:</strong></span>
-                <span>{item.tiposDeCamion?.descripcion}</span>
-              </div>
-              <div className="d-flex justify-content-around mt-3">
-                <Button variant="success" onClick={() => handleVerRegistro(item)}>Ver</Button>
-                <Button variant="info" onClick={() => navigate('/cargasrealizadas')}>Cargas Realizadas</Button>
-              </div>
-              
-            </Card.Body>
-          </Card>
-        );
-      })}
-    </div>
-  );
-///sss
   return (
     <>
+      <Navbar />
       <div className="main-container">
-        <Navbar />
+
+        {/* 🔹 Tabla de Datos */}
         <div className="tabla-div">
-          {isMobile ? renderCards() : renderTable()}
+          <Table responsive striped bordered hover variant="dark">
+            {renderHeaders()}
+            {renderRows()}
+          </Table>
         </div>
+
+        {/* 🔹 Botón para Mostrar el Modal de Filtros */}
+        <div className="filter-button-container">
+          <Button variant="primary" onClick={() => setShowFilter(true)}>
+            Filtrar Registros
+          </Button>
+        </div>
+
       </div>
+
+      {/* 🔹 Modal de Filtros */}
+      <Modal show={showFilter} onHide={() => setShowFilter(false)} centered>
+        <ModalHeader closeButton>
+          <ModalTitle>Filtrar Registros</ModalTitle>
+        </ModalHeader>
+        <ModalBody>
+          <FormGroup>
+            <FormLabel>Fecha de Inicio:</FormLabel>
+            <FormControl type="date" value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} />
+          </FormGroup>
+
+          <FormGroup className="mt-3">
+            <FormLabel>Fecha de Fin:</FormLabel>
+            <FormControl type="date" value={fechaFin} onChange={(e) => setFechaFin(e.target.value)} />
+          </FormGroup>
+
+          <FormGroup className="mt-3">
+            <FormLabel>Filtrar por Estado:</FormLabel>
+            <Form.Check type="checkbox" label="Deuda" value="deuda" onChange={(e) => {
+              const value = e.target.value;
+              setSelectedStatus(prev => prev.includes(value) ? prev.filter(s => s !== value) : [...prev, value]);
+            }} />
+            <Form.Check type="checkbox" label="Pagado" value="pagado" onChange={(e) => {
+              const value = e.target.value;
+              setSelectedStatus(prev => prev.includes(value) ? prev.filter(s => s !== value) : [...prev, value]);
+            }} />
+          </FormGroup>
+        </ModalBody>
+        <Modal.Footer>
+          <Button variant="success" onClick={applyFilters}>Aplicar Filtros</Button>
+          <Button variant="danger" onClick={() => setShowFilter(false)}>Cerrar</Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* 🔹 Modal de Detalles */}
       <Modal show={showModal} onHide={handleCloseModal}>
         <ModalHeader closeButton>
-          <ModalTitle style={{ color: "red" }}>
-            {selectedRegistro ? 'Detalles del registro' : ''}
-          </ModalTitle>
+          <ModalTitle>Detalles del Registro</ModalTitle>
         </ModalHeader>
-        {renderModalData()}
+        <ModalBody>
+          <p><strong>Fecha:</strong> {selectedRegistro?.fechaHora}</p>
+          <p><strong>Estado:</strong> {selectedRegistro?.estado}</p>
+          <p><strong>Usuario:</strong> {selectedRegistro?.usuario?.nombre}</p>
+        </ModalBody>
       </Modal>
     </>
   );

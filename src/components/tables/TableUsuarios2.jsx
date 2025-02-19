@@ -31,6 +31,9 @@ const useWindowWidth = () => {
 
 export default function TableUsuarios() {
   
+  const handleTableSelect = (table) => {
+    navigate(`/${table}`);
+  };
 
 
   const windowWidth = useWindowWidth();
@@ -690,7 +693,6 @@ const handleSelectUser = async (user) => {
   }
 };
 
-
 return (
   <>
     <div className="main-container">
@@ -759,9 +761,15 @@ return (
         {/* 🔹 Botón Crear Registro */}
         <div className="btn-crear-div">
           <button className="btn btn-success btn-crear" onClick={handleCreateRegistro}>
-            CREAR REGISTRO
+            Crear registro
           </button>
         </div>
+        <div className="btn-crear-div">
+          <button className="btn-filtro" onClick={() => handleTableSelect('consultaUsuario')}>
+             Buscar usuario
+          </button>
+        </div>
+
       </div>
 
      
@@ -797,6 +805,5 @@ return (
     </div>
   </>
 );
-
   
 }

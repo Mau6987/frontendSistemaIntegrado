@@ -2,33 +2,19 @@ import React, { useEffect, useState } from 'react';
 import { Form, FormLabel, Modal, ModalBody, ModalHeader, ModalTitle, Table, FormGroup, FormControl, Button, Card } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../Navbar';
-import axios from 'axios';
-import '../css/TableCargasAguaCliente.css';
-import { savePagoCliente,  getPagoCliente } from '../../services/indexedDB'; // Importa funciones de IndexedDB
-
-const useWindowWidth = () => {
-  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
-
-  useEffect(() => {
-    const handleResize = () => {
-      setWindowWidth(window.innerWidth);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []);
-
-  return windowWidth;
-};
+import '../css/TableCargasAguaCliente.css'; // Reutiliza el CSS existente
+import { savePagoCliente, getPagoCliente } from '../../services/indexedDB'; // Importa funciones de IndexedDB
 
 export default function TablePagoCliente() {
-  const windowWidth = useWindowWidth();
-  const isMobile = windowWidth < 768;
   const [data, setData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]); // Datos filtrados
   const [showModal, setShowModal] = useState(false);
+  const [showFilter, setShowFilter] = useState(false); // Controla el modal de filtro
   const [selectedRegistro, setSelectedRegistro] = useState(null);
+
+  // Estados para Filtros
+  const [fechaInicio, setFechaInicio] = useState('');
+  const [fechaFin, setFechaFin] = useState('');
 
   const token = localStorage.getItem('token');
   const navigate = useNavigate();
@@ -38,6 +24,7 @@ export default function TablePagoCliente() {
     const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
     return new Date(dateString).toLocaleDateString('es-ES', options);
   };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -48,16 +35,17 @@ export default function TablePagoCliente() {
               'Authorization': `Bearer ${token}`,
             },
           });
-  
+
           if (response.status === 401) {
             navigate('/');
             return;
           }
-  
+
           if (response.ok) {
             const jsonData = await response.json();
             setData(jsonData);
-  
+            setFilteredData(jsonData); // Guardar datos filtrados inicialmente
+
             // Guardar datos en IndexedDB
             await Promise.all(
               jsonData.map(async (registro) => {
@@ -76,14 +64,30 @@ export default function TablePagoCliente() {
           const cachedData = await getPagoCliente();
           console.log('Datos cargados desde IndexedDB:', cachedData);
           setData(cachedData);
+          setFilteredData(cachedData);
         }
       } catch (error) {
         console.error('Error al obtener datos:', error);
       }
     };
-  
+
     fetchData();
   }, [URL, token, navigate]);
+
+  // Aplicar Filtros
+  const applyFilters = () => {
+    let filtered = data;
+
+    if (fechaInicio && fechaFin) {
+      filtered = filtered.filter((registro) => {
+        const fechaRegistro = new Date(registro.fechaHora);
+        return fechaRegistro >= new Date(fechaInicio) && fechaRegistro <= new Date(fechaFin);
+      });
+    }
+
+    setFilteredData(filtered);
+    setShowFilter(false); // Cierra el modal después de aplicar los filtros
+  };
 
   const handleVerRegistro = (registro) => {
     setSelectedRegistro(registro);
@@ -94,115 +98,88 @@ export default function TablePagoCliente() {
     setShowModal(false);
   };
 
-  const renderHeaders = () => {
-    return (
-      <thead>
-        <tr>
-          <th>Fecha y Hora</th>
-          <th>Monto</th>
-          <th>Nombre de Usuario</th>
-          <th>Ver Registro</th>
+  const renderHeaders = () => (
+    <thead>
+      <tr>
+        <th>Fecha y Hora</th>
+        <th>Monto</th>
+        <th>Nombre de Usuario</th>
+        <th>Ver Registro</th>
+      </tr>
+    </thead>
+  );
+
+  const renderRows = () => (
+    <tbody>
+      {filteredData.map((item, index) => (
+        <tr key={index}>
+          <td>{formatDate(item.fechaHora)}</td>
+          <td>{item.monto}</td>
+          <td>{item.usuario?.nombre}</td>
+          <td>
+            <Button variant="success" onClick={() => handleVerRegistro(item)}>
+              Ver
+            </Button>
+          </td>
         </tr>
-      </thead>
-    );
-  };
-
-  const renderRows = () => {
-    return (
-      <tbody>
-        {data.map((item, index) => (
-          <tr key={index}>
-            <td data-label="Fecha y Hora">{formatDate(item.fechaHora)}</td>
-            <td data-label="Monto">{item.monto}</td>
-            <td data-label="Nombre de Usuario">{item.usuario?.nombre}</td>
-            <td data-label="Ver Registro">
-              <button className="btn btn-success" onClick={() => handleVerRegistro(item)}>
-                <i className="fa-solid fa-eye"></i>
-              </button>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    );
-  };
-
-  const renderModalData = () => {
-    if (selectedRegistro) {
-      return (
-        <ModalBody>
-          <FormGroup className="mb-3" controlId="formField_fechaHora">
-            <FormLabel style={{ color: "red" }}>Fecha/Hora</FormLabel>
-            <FormControl
-              type="text"
-              value={new Date(selectedRegistro.fechaHora).toLocaleString()}
-              readOnly
-              plaintext
-            />
-          </FormGroup>
-          <FormGroup className="mb-3" controlId="formField_monto">
-            <FormLabel style={{ color: "red" }}>Monto</FormLabel>
-            <FormControl type="text" value={selectedRegistro.monto} readOnly plaintext />
-          </FormGroup>
-          <FormGroup className="mb-3" controlId="formField_usuario">
-            <FormLabel style={{ color: "red" }}>Nombre de usuario</FormLabel>
-            <FormControl type="text" value={selectedRegistro.usuario.nombre} readOnly plaintext />
-          </FormGroup>
-        </ModalBody>
-      );
-    }
-  };
-
-  const renderTable = () => (
-    <Table responsive striped bordered hover variant="dark">
-      {renderHeaders()}
-      {renderRows()}
-    </Table>
+      ))}
+    </tbody>
   );
 
-  const renderCards = () => (
-    <div>
-      {data.map((item, index) => {
-        const formattedDate = formatDate(item.fechaHora);
-        return (
-          <Card key={index} className="mb-3 card-custom">
-            <Card.Body>
-              <div className="d-flex justify-content-between">
-                <span><strong>Fecha y Hora:</strong></span>
-                <span>{formattedDate}</span>
-              </div>
-              <div className="d-flex justify-content-between">
-                <span><strong>Monto:</strong></span>
-                <span>{item.monto}</span>
-              </div>
-              <div className="d-flex justify-content-between">
-                <span><strong>Nombre de Usuario:</strong></span>
-                <span>{item.usuario.nombre}</span>
-              </div>
-              <div className="d-flex justify-content-around mt-3">
-                <Button variant="success" onClick={() => handleVerRegistro(item)}>Ver</Button>
-              </div>
-            </Card.Body>
-          </Card>
-        );
-      })}
-    </div>
-  );
-//sss
   return (
     <>
+      <Navbar />
       <div className="main-container">
-        <Navbar />
+
+        {/* 🔹 Tabla de Datos */}
         <div className="tabla-div">
-          {isMobile ? renderCards() : renderTable()}
+          <Table responsive striped bordered hover variant="dark">
+            {renderHeaders()}
+            {renderRows()}
+          </Table>
         </div>
+
+        {/* 🔹 Botón para Mostrar el Modal de Filtros */}
+        <div className="filter-button-container">
+          <Button variant="primary" onClick={() => setShowFilter(true)}>
+            Filtrar por Fecha
+          </Button>
+        </div>
+
       </div>
+
+      {/* 🔹 Modal de Filtros */}
+      <Modal show={showFilter} onHide={() => setShowFilter(false)} centered>
+        <ModalHeader closeButton>
+          <ModalTitle>Filtrar por Fecha</ModalTitle>
+        </ModalHeader>
+        <ModalBody>
+          <FormGroup>
+            <FormLabel>Fecha de Inicio:</FormLabel>
+            <FormControl type="date" value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} />
+          </FormGroup>
+
+          <FormGroup className="mt-3">
+            <FormLabel>Fecha de Fin:</FormLabel>
+            <FormControl type="date" value={fechaFin} onChange={(e) => setFechaFin(e.target.value)} />
+          </FormGroup>
+        </ModalBody>
+        <Modal.Footer>
+          <Button variant="success" onClick={applyFilters}>Aplicar Filtros</Button>
+          <Button variant="danger" onClick={() => setShowFilter(false)}>Cerrar</Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* 🔹 Modal de Detalles */}
       <Modal show={showModal} onHide={handleCloseModal}>
         <ModalHeader closeButton>
-          <ModalTitle style={{ color: "red" }}>
-            {selectedRegistro ? 'Detalles del registro' : ''}
-          </ModalTitle>
+          <ModalTitle>Detalles del Registro</ModalTitle>
         </ModalHeader>
-        {renderModalData()}
+        <ModalBody>
+          <p><strong>Fecha:</strong> {selectedRegistro?.fechaHora}</p>
+          <p><strong>Monto:</strong> {selectedRegistro?.monto}</p>
+          <p><strong>Usuario:</strong> {selectedRegistro?.usuario?.nombre}</p>
+        </ModalBody>
       </Modal>
     </>
   );

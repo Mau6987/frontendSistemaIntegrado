@@ -88,9 +88,7 @@ export default function Navbar() {
                 <Dropdown.Item onClick={() => handleTableSelect('consultas')}>
                   Consultas de cargas y pagos
                 </Dropdown.Item>
-                <Dropdown.Item onClick={() => handleTableSelect('consultaUsuario')}>
-                 Buscar Usuario
-                </Dropdown.Item>
+                
                 
               </Dropdown.Menu>
             </Dropdown>
