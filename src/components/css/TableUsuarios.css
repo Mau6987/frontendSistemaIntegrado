@@ -100,16 +100,17 @@
   }
 }
 .tiny-input {
-  width: 1px; /* Tamaño pequeño */
-  height: 1px;
-  padding: 1px;
+  width: 100%; /* Ocupa todo el ancho disponible del contenedor */
+  height: auto; /* Altura automática para acomodar el contenido */
+  padding: 8px; /* Padding más generoso para facilitar la entrada de datos */
   text-align: center;
-  font-size: 1px;
+  font-size: 16px; /* Tamaño de fuente estándar para facilidad de lectura */
   border: 1px solid #ccc;
-  border-radius: 1px;
-  position: relative; /* Para que el z-index funcione */
-  z-index: 1; /* Asegúrate de que el campo esté debajo de los botones */
+  border-radius: 4px; /* Borde redondeado para estética moderna */
+  position: relative;
+  z-index: 1;
 }
+
 
 .btn-overlap {
   z-index: 2; /* Asegúrate de que los botones estén encima del campo */
