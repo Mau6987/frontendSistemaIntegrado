@@ -4,8 +4,7 @@ import Navbar from "./Navbar";
 import { useNavigate } from "react-router-dom";
 
 function HomePro() {
-  const [selectedTable, setSelectedTable] = useState("");
-  const navigate = useNavigate();
+ 
 
   useEffect(() =>{
     const token = localStorage.getItem('token');

@@ -485,7 +485,7 @@ const fetchData = async () => {
   const fetchPropietarios = async () => {
     try {
       if (navigator.onLine) {
-        const response = await fetch('https://mi-backendsecond.onrender.com/propietarios', {
+        const response = await fetch('https://xvxsfhnjxj.execute-api.us-east-1.amazonaws.com/dev/propietarios', {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (response.ok) {

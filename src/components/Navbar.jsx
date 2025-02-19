@@ -72,18 +72,18 @@ export default function Navbar() {
               <Dropdown.Menu variant='dark' className='tables-dropdown-menu'>
                
                 <Dropdown.Item onClick={() => handleTableSelect('usuarios2')}>
-                  Gestión de Usuarios2
+                  Gestión de Usuarios
                 </Dropdown.Item>
                 <Dropdown.Item onClick={() => handleTableSelect('tiposDeCamion')}>
                   Gestión Tipo de Camión
                 </Dropdown.Item>
                 
                 <Dropdown.Item onClick={() => handleTableSelect('cargagua2')}>
-                  Gestión de Carga de Agua2
+                  Gestión de Carga de Agua
                 </Dropdown.Item>
                                 
                 <Dropdown.Item onClick={() => handleTableSelect('pagos2')}>
-                  Gestión de Pagos2
+                  Gestión de Pagos
                 </Dropdown.Item>
                 <Dropdown.Item onClick={() => handleTableSelect('consultas')}>
                 TableConsultas

@@ -1,7 +1,7 @@
 import { openDB } from 'idb';
 
 // Inicializar la base de datos
-const dbPromise = openDB('app-db', 55, { // Cambia la versión al número más reciente
+const dbPromise = openDB('app-db', 60, { // Cambia la versión al número más reciente
   upgrade(db, oldVersion) {
     console.log('Actualizando la base de datos...');
     if (!db.objectStoreNames.contains('cargasAguaPropietario')) {
